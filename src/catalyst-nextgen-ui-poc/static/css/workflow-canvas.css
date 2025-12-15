@@ -1,0 +1,416 @@
+/**
+ * Visual Node-Based Workflow Canvas
+ * Inspired by OpenAI Agent Builder
+ */
+
+/* ============================================
+   CANVAS LAYOUT - Node-Based Visual Builder
+   ============================================ */
+
+.visual-canvas-container {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 0;
+    height: calc(100vh - 180px);
+    min-height: 600px;
+}
+
+/* Left Sidebar - Tool Palette (OpenAI Style) */
+.tool-palette {
+    background: #fafafa;
+    border-right: 1px solid #e5e7eb;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.tool-palette-section {
+    margin-bottom: 1.5rem;
+}
+
+.tool-palette-header {
+    font-size: 11px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    padding-left: 0.5rem;
+}
+
+.palette-tool {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+    border-radius: 6px;
+    cursor: grab;
+    transition: all 150ms ease-out;
+    background: white;
+    border: 1px solid transparent;
+}
+
+.palette-tool:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.palette-tool:active {
+    cursor: grabbing;
+}
+
+.palette-tool-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.palette-tool-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+}
+
+/* Main Canvas Area */
+.node-canvas {
+    background: #ffffff;
+    background-image: 
+        linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+    position: relative;
+    overflow: auto;
+}
+
+.canvas-inner {
+    position: relative;
+    min-width: 100%;
+    min-height: 100%;
+    padding: 2rem;
+}
+
+/* ============================================
+   WORKFLOW NODES - OpenAI Agent Style
+   ============================================ */
+
+.workflow-node {
+    position: absolute;
+    min-width: 200px;
+    max-width: 300px;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    cursor: move;
+    transition: all 200ms ease-out;
+}
+
+.workflow-node:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    border-color: #3b82f6;
+}
+
+.workflow-node.node-active {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.workflow-node.node-error {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.02);
+}
+
+/* Node Header */
+.node-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.node-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.node-title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.node-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-llm { background: #dbeafe; color: #1e40af; }
+.badge-tool { background: #dcfce7; color: #15803d; }
+.badge-analysis { background: #fef3c7; color: #92400e; }
+
+/* Node Content - Sticky Note Style for Prompts */
+.node-content {
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+.node-content.sticky-note {
+    background: #fef3c7;
+    border: 1px solid #fde047;
+    border-radius: 6px;
+    padding: 0.5rem;
+    font-family: 'Segoe Print', 'Comic Sans MS', cursive;
+    color: #78350f;
+    min-height: 60px;
+    white-space: pre-wrap;
+}
+
+/* Node Actions */
+.node-actions {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f3f4f6;
+    opacity: 0;
+    transition: opacity 150ms ease-out;
+}
+
+.workflow-node:hover .node-actions {
+    opacity: 1;
+}
+
+.node-action-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 11px;
+    border-radius: 4px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 150ms ease-out;
+}
+
+.node-action-btn:hover {
+    background: #f9fafb;
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+/* Connection Points */
+.node-connector {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: white;
+    border: 2px solid #3b82f6;
+    border-radius: 50%;
+    z-index: 10;
+}
+
+.node-connector.input {
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.node-connector.output {
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.node-connector:hover {
+    background: #3b82f6;
+    transform: translateX(-50%) scale(1.3);
+}
+
+/* ============================================
+   CONNECTING LINES - Bezier Curves
+   ============================================ */
+
+.canvas-connections {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.connection-line {
+    stroke: #cbd5e1;
+    stroke-width: 2;
+    fill: none;
+    transition: stroke 200ms ease-out;
+}
+
+.connection-line.active {
+    stroke: #3b82f6;
+    stroke-width: 3;
+}
+
+.connection-arrow {
+    fill: #cbd5e1;
+}
+
+/* ============================================
+   CANVAS CONTROLS - Zoom, Pan, etc.
+   ============================================ */
+
+.canvas-controls {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+}
+
+.canvas-control-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    transition: all 150ms ease-out;
+    font-size: 14px;
+}
+
+.canvas-control-btn:hover {
+    background: #f9fafb;
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+/* Mini-map (optional) */
+.canvas-minimap {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    width: 150px;
+    height: 100px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+}
+
+/* ============================================
+   DRAGGING STATES
+   ============================================ */
+
+.workflow-node.dragging {
+    opacity: 0.7;
+    z-index: 1000;
+    transform: scale(1.05);
+}
+
+.palette-tool.dragging {
+    opacity: 0.5;
+}
+
+/* Drop zone highlight */
+.node-canvas.drag-over {
+    background-color: rgba(59, 130, 246, 0.02);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .visual-canvas-container {
+        grid-template-columns: 180px 1fr;
+    }
+    
+    .workflow-node {
+        max-width: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    .visual-canvas-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+    }
+    
+    .tool-palette {
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+    }
+    
+    .tool-palette-section {
+        margin-bottom: 0;
+        min-width: 150px;
+    }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes nodeAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.workflow-node {
+    animation: nodeAppear 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes lineDrawIn {
+    from {
+        stroke-dashoffset: 1000;
+    }
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.connection-line.new {
+    stroke-dasharray: 1000;
+    animation: lineDrawIn 600ms ease-out forwards;
+}
+
+
+
+
+
+

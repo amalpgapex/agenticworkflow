@@ -1,0 +1,534 @@
+/**
+ * Workflow Builder Styles
+ * Modular CSS for the Visual Workflow Builder
+ * Design System: Rams, Norman, Ive principles
+ */
+
+/* ============================================
+   DESIGN TOKENS
+   ============================================ */
+:root {
+    --wb-bg: #f9fafb;
+    --wb-surface: #ffffff;
+    --wb-border: #e5e7eb;
+    --wb-text: #1a1a1a;
+    --wb-text-muted: #6b7280;
+    --wb-accent: #3b82f6;
+    --wb-accent-hover: #2563eb;
+    --wb-success: #10b981;
+    --wb-warning: #f59e0b;
+    --wb-error: #ef4444;
+    --wb-radius: 12px;
+    --wb-radius-lg: 16px;
+    --wb-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --wb-shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.08);
+    --wb-transition-fast: 150ms ease-out;
+    --wb-transition-normal: 200ms ease-out;
+    --wb-transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+.builder-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.builder-header {
+    background: var(--wb-surface);
+    border: 1px solid var(--wb-border);
+    border-radius: var(--wb-radius);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--wb-shadow);
+}
+
+.workflow-canvas {
+    background: var(--wb-surface);
+    border: 1px solid var(--wb-border);
+    border-radius: var(--wb-radius);
+    padding: 3rem;
+    min-height: 500px;
+    box-shadow: var(--wb-shadow);
+    position: relative;
+}
+
+/* ============================================
+   STEP CARDS - Phase 2B Enhanced Design
+   ============================================ */
+.step-card-container {
+    margin-bottom: 1rem;
+}
+
+.step-card-header {
+    background: white;
+    border: 2px solid var(--wb-border);
+    border-radius: var(--wb-radius);
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    transition: all var(--wb-transition-normal);
+    box-shadow: var(--wb-shadow);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.step-card-header:hover {
+    border-color: var(--wb-accent);
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15);
+    transform: translateY(-1px);
+}
+
+.step-card-header.step-active {
+    border-color: var(--wb-accent);
+    background: rgba(59, 130, 246, 0.02);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.step-card-header.step-has-error {
+    border-color: var(--wb-error);
+    background: rgba(239, 68, 68, 0.02);
+}
+
+.step-card-header.step-has-error:hover {
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.15);
+}
+
+.step-card-header:focus {
+    outline: 2px solid var(--wb-accent);
+    outline-offset: 2px;
+}
+
+.step-card-header:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Drag Handle */
+.step-drag-handle {
+    cursor: grab;
+    color: #94a3b8;
+    padding: 0.25rem;
+    transition: color var(--wb-transition-fast);
+    flex-shrink: 0;
+}
+
+.step-drag-handle:hover {
+    color: var(--wb-accent);
+}
+
+.step-drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Step Number Badge */
+.step-number {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 8px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #64748b;
+    flex-shrink: 0;
+    transition: all var(--wb-transition-fast);
+}
+
+.step-card-header.step-active .step-number {
+    background: var(--wb-accent);
+    color: white;
+}
+
+/* Step Info */
+.step-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.step-name {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: #0f172a;
+}
+
+.step-preview {
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+/* Step Type Badges */
+.step-type-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.badge-llm { background: #dbeafe; color: #1e40af; }
+.badge-tool { background: #dcfce7; color: #15803d; }
+.badge-analysis { background: #fef3c7; color: #92400e; }
+
+/* Expand Icon */
+.step-expand-icon {
+    color: #94a3b8;
+    flex-shrink: 0;
+    transition: color var(--wb-transition-fast);
+}
+
+.step-card-header:hover .step-expand-icon {
+    color: var(--wb-accent);
+}
+
+/* Step Actions */
+.step-actions {
+    display: flex;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.step-delete-btn {
+    padding: 0.375rem;
+    color: #94a3b8;
+    transition: all var(--wb-transition-fast);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.step-delete-btn:hover {
+    color: var(--wb-error);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Step Body (Expanded Content) */
+.step-card-body {
+    background: white;
+    border: 2px solid var(--wb-accent);
+    border-top: none;
+    border-bottom-left-radius: var(--wb-radius);
+    border-bottom-right-radius: var(--wb-radius);
+    padding: 1.5rem;
+    margin-top: -12px;
+}
+
+.step-editor-content {
+    animation: fadeInUp var(--wb-transition-normal);
+}
+
+/* Dragging States */
+.step-card-container.sortable-ghost {
+    opacity: 0.5;
+}
+
+.step-card-container.sortable-drag {
+    opacity: 0.8;
+    transform: rotate(2deg);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================
+   STEP CONNECTOR
+   ============================================ */
+.step-connector {
+    width: 2px;
+    height: 24px;
+    background: linear-gradient(to bottom, var(--wb-border), transparent);
+    margin: -8px auto;
+    position: relative;
+}
+
+.step-connector::after {
+    content: '↓';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--wb-text-muted);
+    font-size: 12px;
+}
+
+/* ============================================
+   TOOLBOX
+   ============================================ */
+.toolbox {
+    background: var(--wb-surface);
+    border: 1px solid var(--wb-border);
+    border-radius: var(--wb-radius);
+    padding: 1.5rem;
+    box-shadow: var(--wb-shadow);
+}
+
+.tool-item {
+    background: white;
+    border: 1px solid var(--wb-border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    cursor: grab;
+    transition: all var(--wb-transition-normal);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.tool-item:hover {
+    border-color: var(--wb-accent);
+    background: rgba(59, 130, 246, 0.02);
+    transform: translateX(4px);
+}
+
+.tool-item:active {
+    cursor: grabbing;
+}
+
+/* ============================================
+   PROPERTY EDITOR
+   ============================================ */
+.property-editor {
+    background: white;
+    border: 1px solid var(--wb-border);
+    border-radius: var(--wb-radius);
+    padding: 1.5rem;
+    margin-top: 1rem;
+    box-shadow: var(--wb-shadow);
+}
+
+/* ============================================
+   FORM INPUTS
+   ============================================ */
+.input-field {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--wb-border);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: all var(--wb-transition-normal);
+    background: white;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: var(--wb-accent);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input-field:disabled {
+    background: #f9fafb;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all var(--wb-transition-normal);
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: var(--wb-accent);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--wb-accent-hover);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--wb-text-muted);
+    border: 1px solid var(--wb-border);
+}
+
+.btn-ghost:hover {
+    background: var(--wb-bg);
+    border-color: var(--wb-accent);
+    color: var(--wb-text);
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--wb-text-muted);
+}
+
+.empty-state-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    background: var(--wb-bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.drop-zone {
+    border: 2px dashed var(--wb-accent);
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: var(--wb-radius);
+    padding: 2rem;
+    text-align: center;
+    color: var(--wb-accent);
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+.fade-in {
+    animation: fadeIn var(--wb-transition-slow);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInFromTop {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(100px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideOutRight {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(100px); }
+}
+
+/* ============================================
+   VALIDATION / ISSUES PANEL
+   ============================================ */
+.validation-issue-error,
+.validation-issue-warning {
+    animation: slideInFromTop var(--wb-transition-normal);
+}
+
+.validation-issue-error:hover,
+.validation-issue-warning:hover {
+    transform: translateX(2px);
+    transition: transform var(--wb-transition-fast);
+}
+
+/* ============================================
+   CONTEXTUAL HELP SYSTEM
+   ============================================ */
+.help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #e0e7ff;
+    color: #4f46e5;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: help;
+    transition: all var(--wb-transition-fast);
+}
+
+.help-icon:hover {
+    background: #4f46e5;
+    color: white;
+    transform: scale(1.1);
+}
+
+.tooltip {
+    position: relative;
+}
+
+.tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 100;
+    transition: all var(--wb-transition-normal);
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.tooltip-text::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1e293b;
+}
+
+.tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+    bottom: 135%;
+}
+
+.tooltip-text.multiline {
+    white-space: normal;
+    max-width: 250px;
+    text-align: center;
+    line-height: 1.4;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+[x-cloak] {
+    display: none !important;
+}
+
+.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+}
+
+

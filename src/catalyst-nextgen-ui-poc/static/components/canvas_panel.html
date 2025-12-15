@@ -1,0 +1,868 @@
+<div class="panel h-full flex flex-col">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-4 flex-shrink-0">
+        <div class="flex items-center gap-3">
+            <button @click="leftPanelCollapsed = !leftPanelCollapsed" 
+                    class="text-slate-400 hover:text-slate-600 text-sm"
+                    :title="leftPanelCollapsed ? 'Expand left panel' : 'Collapse left panel'">
+                <span x-show="!leftPanelCollapsed">◀</span>
+                <span x-show="leftPanelCollapsed">▶</span>
+            </button>
+            <div>
+                <h3 class="text-xs font-bold uppercase text-slate-400">Canvas</h3>
+                <p class="text-xs text-slate-500" x-show="stepOutputs.length > 0" 
+                   x-text="`Step ${currentViewingStep + 1}: ${steps[currentViewingStep]?.name || ''}`"></p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3 text-sm text-slate-500">
+            <span x-show="leftPanelCollapsed && rightPanelCollapsed" 
+                  class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
+                🎯 Focus mode
+            </span>
+            <button x-show="currentCanvasType === 'alignment_viewer' && alignmentData && !processing"
+                    @click="toggleEditMode()"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all shadow-sm"
+                    :class="alignmentEditMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'">
+                <svg x-show="!alignmentEditMode" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                <svg x-show="alignmentEditMode" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span x-text="alignmentEditMode ? 'Done' : 'Edit'"></span>
+            </button>
+            <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-100">
+                <span class="w-2 h-2 rounded-full" :class="processing ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'"></span>
+                <span x-text="processing ? 'Task in motion' : 'Output ready'"></span>
+            </span>
+            <button @click="rightPanelCollapsed = !rightPanelCollapsed" 
+                    class="text-slate-400 hover:text-slate-600 text-sm"
+                    :title="rightPanelCollapsed ? 'Expand right panel' : 'Collapse right panel'">
+                <span x-show="!rightPanelCollapsed">▶</span>
+                <span x-show="rightPanelCollapsed">◀</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Empty State -->
+    <div x-show="!stepOutputs.length" class="text-slate-400 text-center py-16">
+        <div class="max-w-sm mx-auto space-y-3">
+            <div class="w-16 h-16 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-2xl">🎨</div>
+            <p class="text-lg font-semibold">Your canvas is ready</p>
+            <p class="text-sm text-slate-500">Bring a document into Studio, pick a task, and watch the canvas come alive.</p>
+            <p class="text-xs text-slate-400 mt-6">
+                💡 Tip: Use <kbd class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600">[</kbd> 
+                <kbd class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600">]</kbd> 
+                to collapse panels, or click the arrows
+            </p>
+        </div>
+    </div>
+    
+    <!-- Output Display -->
+    <div x-show="stepOutputs.length > 0" class="flex-1 overflow-hidden flex flex-col">
+        <div x-show="processing && currentStreamingStep === currentViewingStep" 
+             class="mb-4 px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium rounded-xl flex-shrink-0">
+            ✨ Live stream in progress
+        </div>
+        
+        <!-- STREAMING PREVIEW (while processing) -->
+        <div x-show="processing" 
+             class="flex-1 overflow-y-auto p-6 bg-white border border-slate-200 rounded-2xl markdown-content shadow-inner" 
+             x-html="renderMarkdown(stepOutputs[currentViewingStep] || '')">
+        </div>
+        
+        <!-- CANVAS COMPONENTS (after processing) -->
+        <div x-show="!processing" class="flex-1 overflow-y-auto">
+            <!-- TEXT EDITOR CANVAS -->
+            <div x-show="currentCanvasType === 'text_editor'">
+                <!-- Formatting Toolbar -->
+                <div class="border border-slate-200 bg-slate-50 rounded-t-2xl p-3 flex gap-1.5 flex-wrap">
+                    <!-- Text Formatting -->
+                    <button @click.prevent="formatText('bold')" 
+                            class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 font-semibold"
+                            title="Bold">
+                        B
+                    </button>
+                    <button @click.prevent="formatText('italic')" 
+                            class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 italic"
+                            title="Italic">
+                        I
+                    </button>
+                    <button @click.prevent="formatText('underline')" 
+                            class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 underline"
+                            title="Underline">
+                        U
+                    </button>
+                    
+                    <div class="w-px h-6 bg-slate-200 mx-1.5"></div>
+                    
+                    <!-- Headings -->
+                    <button @click.prevent="formatText('h1')" 
+                            class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 text-xs font-semibold"
+                            title="Heading 1">
+                        H1
+                    </button>
+                    <button @click.prevent="formatText('h2')" 
+                            class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 text-xs font-semibold"
+                            title="Heading 2">
+                        H2
+                    </button>
+                    <button @click.prevent="formatText('h3')" 
+                            class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 text-xs font-semibold"
+                            title="Heading 3">
+                        H3
+                    </button>
+                    <button @click.prevent="formatText('paragraph')" 
+                            class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 text-xs"
+                            title="Normal text">
+                        P
+                    </button>
+                    
+                    <div class="w-px h-6 bg-slate-200 mx-1.5"></div>
+                    
+                    <!-- Lists -->
+                    <button @click.prevent="formatText('insertUnorderedList')" 
+                            class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 text-xs font-medium"
+                            title="Bullet list">
+                        • List
+                    </button>
+                    <button @click.prevent="formatText('insertOrderedList')" 
+                            class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 text-xs font-medium"
+                            title="Numbered list">
+                        1. List
+                    </button>
+                    
+                    <div class="w-px h-6 bg-slate-200 mx-1.5"></div>
+                    
+                    <!-- Other -->
+                    <button @click.prevent="formatText('removeFormat')" 
+                            class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 text-xs"
+                            title="Clear formatting">
+                        Reset style
+                    </button>
+                </div>
+                
+                <!-- WYSIWYG Editor -->
+                <div id="wysiwyg-editor" 
+                     contenteditable="true"
+                     @blur="updateMarkdownFromHTML($event.target)"
+                     @input="updateMarkdownFromHTML($event.target)"
+                     x-html="renderMarkdown(stepOutputs[currentViewingStep] || '')"
+                     class="wysiwyg-editor markdown-content border-t-0"
+                     placeholder="AI output will appear here...">
+                </div>
+            </div>
+            
+            <!-- ALIGNMENT VIEWER CANVAS -->
+            <div x-show="currentCanvasType === 'alignment_viewer'">
+                <div x-show="!alignmentData" x-html="renderAlignmentViewer(stepOutputs[currentViewingStep] || '')"></div>
+                
+                <!-- Full Three-Column Alignment Viewer -->
+                <template x-if="alignmentData">
+                <div class="relationship-viewer-container"
+                     x-data="{
+                         hoveredPair: null,
+                         selectedPair: null,
+                         viewMode: 'compact'
+                     }">
+                    <!-- Header with Stats -->
+                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
+                        <div>
+                            <h3 class="text-xl font-light text-slate-900 tracking-tight">
+                                <span x-text="alignmentData?.file1_column || 'File 1'"></span>
+                                <span class="mx-3 text-slate-300">→</span>
+                                <span x-text="alignmentData?.file2_column || 'File 2'"></span>
+                            </h3>
+                            <div class="flex items-center gap-4 mt-2 text-xs text-slate-500">
+                                <span x-text="`${((alignmentData?.unified_pairs || alignmentData?.matched_pairs) || []).length} total items`"></span>
+                                <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                <span x-text="`${alignmentData?.total_matches || 0} matched`"></span>
+                                <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                <span x-text="`${((alignmentData?.avg_similarity || 0) * 100).toFixed(0)}% avg similarity`"></span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div x-show="alignmentEditMode" 
+                                 class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+                                <span class="text-xs font-medium text-blue-700">Edit mode active</span>
+                            </div>
+                            <button x-show="alignmentEditMode" 
+                                    @click="resetAlignment()"
+                                    class="text-xs text-slate-600 hover:text-slate-900 px-3 py-1.5 border border-slate-300 rounded-lg hover:border-slate-400 bg-white shadow-sm">
+                                <span class="inline-flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                    Reset
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Edit Mode Instructions -->
+                    <div x-show="alignmentEditMode"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 -translate-y-2"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         class="mb-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-blue-900">Edit Mode Active</p>
+                                <div class="text-xs text-blue-700 mt-1 space-y-1">
+                                    <p><strong>To unlink:</strong> Click "Unlink" on matched pairs</p>
+                                    <p><strong>To link:</strong> Click orphan from left, then orphan from right</p>
+                                </div>
+                                <!-- Selection Status -->
+                                <div x-show="selectedOrphan1 !== null || selectedOrphan2 !== null" 
+                                     class="mt-2 flex items-center gap-2">
+                                    <div class="inline-flex items-center gap-1.5 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
+                                        <span x-text="selectedOrphan1 !== null && selectedOrphan2 !== null ? 'Creating match...' : (selectedOrphan1 !== null ? 'Select File 2 item →' : 'Select File 1 item ←')"></span>
+                                    </div>
+                                    <button @click="selectedOrphan1 = null; selectedOrphan2 = null" 
+                                            class="text-purple-600 hover:text-purple-800 underline text-xs">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                            <button @click="toggleEditMode()" class="text-blue-400 hover:text-blue-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- THREE-COLUMN LAYOUT -->
+                    <div class="flex gap-3 h-[calc(100vh-320px)] min-h-[500px] relative">
+                        <!-- LEFT COLUMN: File 1 Items -->
+                        <div class="flex-1 overflow-y-auto pr-2" style="scrollbar-width: thin;" id="left-scroll-container">
+                            <div class="space-y-2">
+                                <template x-for="(pair, idx) in (alignmentData.unified_pairs || alignmentData.matched_pairs)" :key="`left-${idx}`">
+                                    <div x-show="pair.file1_value"
+                                         @mouseenter="hoveredPair = idx"
+                                         @mouseleave="hoveredPair = null"
+                                         @click="handleCardClick(idx, pair, 'left')"
+                                         :id="`left-${idx}`"
+                                         :class="{
+                                             'cursor-pointer': pair.type === 'match' || (alignmentEditMode && pair.type === 'orphan_file1'),
+                                             'ring-2 ring-blue-400': hoveredPair === idx && pair.type === 'match' && !alignmentEditMode,
+                                             'ring-2 ring-blue-600 shadow-md': selectedPair === idx && pair.type === 'match',
+                                             'ring-2 ring-purple-500 shadow-lg': alignmentEditMode && selectedOrphan1 === idx,
+                                             'ring-1 ring-purple-200': alignmentEditMode && pair.type === 'orphan_file1' && selectedOrphan1 !== idx,
+                                             'opacity-50': hoveredPair !== null && hoveredPair !== idx && selectedPair === null && !alignmentEditMode,
+                                             'opacity-70': pair.type === 'orphan_file1' && !alignmentEditMode
+                                         }"
+                                         class="relationship-node group transition-all duration-200 relative">
+                                        <!-- Similarity Indicator -->
+                                        <div x-show="pair.type === 'match'"
+                                             class="absolute -left-1.5 top-1/2 -translate-y-1/2 w-1 rounded-full"
+                                             :class="{
+                                                 'bg-emerald-500': pair.similarity > 0.8,
+                                                 'bg-blue-500': pair.similarity > 0.6 && pair.similarity <= 0.8,
+                                                 'bg-amber-500': pair.similarity <= 0.6
+                                             }"
+                                             :style="`height: ${16 + pair.similarity * 24}px`"></div>
+                                        
+                                        <!-- Orphan Indicator -->
+                                        <div x-show="pair.type === 'orphan_file1'"
+                                             class="absolute -left-1.5 top-1/2 -translate-y-1/2 w-1 h-6 rounded-full"
+                                             :class="alignmentEditMode && selectedOrphan1 === idx ? 'bg-purple-500' : 'bg-amber-400'"></div>
+                                        
+                                        <!-- Selected Badge -->
+                                        <div x-show="alignmentEditMode && selectedOrphan1 === idx"
+                                             class="absolute -top-2 left-1/2 -translate-x-1/2 z-10">
+                                            <div class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-600 text-white text-[9px] font-bold rounded-full shadow-lg">
+                                                <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                SELECTED
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Card Content -->
+                                        <div class="p-3 border rounded-lg transition-all"
+                                             :class="pair.type === 'orphan_file1' ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-white hover:border-slate-300'">
+                                            <div class="text-xs leading-snug"
+                                                 :class="selectedPair === idx ? '' : 'line-clamp-2'"
+                                                 x-text="pair.file1_value"></div>
+                                            <div class="mt-1.5 flex items-center justify-between">
+                                                <span class="text-[10px] font-mono text-slate-400" x-text="`#${pair.file1_index + 1}`"></span>
+                                                <div class="flex items-center gap-1.5">
+                                                    <span x-show="pair.type === 'orphan_file1'" 
+                                                          class="text-[10px] text-amber-700 bg-amber-200 px-1.5 py-0.5 rounded font-medium">
+                                                        Unmatched
+                                                    </span>
+                                                    <button x-show="alignmentEditMode && pair.type === 'match'" 
+                                                            @click.stop="unlinkMatch(idx)"
+                                                            class="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-red-600 hover:text-white hover:bg-red-600 border border-red-300 hover:border-red-600 rounded transition-all">
+                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                        </svg>
+                                                        Unlink
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        
+                        <!-- CENTER COLUMN: Detail Panel -->
+                        <div class="w-80 flex-shrink-0 overflow-y-auto pr-2" style="scrollbar-width: thin;">
+                            <!-- Empty state -->
+                            <div x-show="selectedPair === null" class="h-full flex items-center justify-center">
+                                <div class="text-center text-slate-400 px-6">
+                                    <svg class="w-12 h-12 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                    <p class="text-xs font-medium">Click any pair to view details</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Selected Pair Details -->
+                            <div x-show="selectedPair !== null"
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 scale-95"
+                                 x-transition:enter-end="opacity-100 scale-100"
+                                 class="space-y-3">
+                                <template x-if="selectedPair !== null && (alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair]">
+                                    <div>
+                                        <!-- Detail Header -->
+                                        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-1.5 h-1.5 rounded-full"
+                                                     :class="(alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].type === 'match' ? 'bg-blue-500' : 'bg-amber-400'"></div>
+                                                <h4 class="text-xs font-semibold text-slate-700" 
+                                                    x-text="(alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].type === 'match' ? 'Relationship' : 'Unmatched Item'"></h4>
+                                            </div>
+                                            <button @click="selectedPair = null" class="text-slate-400 hover:text-slate-600">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Orphan Notices -->
+                                        <div x-show="(alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].type === 'orphan_file1'"
+                                             class="mb-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                                </svg>
+                                                <span class="text-[10px] uppercase text-amber-700 font-medium">No Match Found</span>
+                                            </div>
+                                            <p class="text-[11px] text-amber-700">This item from File 1 has no corresponding match in File 2.</p>
+                                        </div>
+                                        
+                                        <div x-show="(alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].type === 'orphan_file2'"
+                                             class="mb-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                                </svg>
+                                                <span class="text-[10px] uppercase text-amber-700 font-medium">No Match Found</span>
+                                            </div>
+                                            <p class="text-[11px] text-amber-700">This item from File 2 has no corresponding match in File 1.</p>
+                                        </div>
+                                        
+                                        <!-- Similarity Score -->
+                                        <div x-show="(alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].type === 'match'"
+                                             class="mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                            <div class="flex items-center justify-between mb-1.5">
+                                                <span class="text-[10px] uppercase text-slate-500 font-medium">Similarity</span>
+                                                <span class="text-xs font-bold"
+                                                      :class="{
+                                                          'text-emerald-600': (alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].similarity > 0.8,
+                                                          'text-blue-600': (alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].similarity > 0.6,
+                                                          'text-amber-600': (alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].similarity <= 0.6
+                                                      }"
+                                                      x-text="`${((alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].similarity * 100).toFixed(1)}%`"></span>
+                                            </div>
+                                            <div class="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                                                <div class="h-full rounded-full"
+                                                     :class="{
+                                                         'bg-emerald-500': (alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].similarity > 0.8,
+                                                         'bg-blue-500': (alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].similarity > 0.6,
+                                                         'bg-amber-500': (alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].similarity <= 0.6
+                                                     }"
+                                                     :style="`width: ${(alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].similarity * 100}%`"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Diff View -->
+                                        <div x-show="(alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].type === 'match' && alignmentData.include_diff && (alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].diff" 
+                                             class="mb-3 p-3 bg-white rounded-lg border border-slate-200">
+                                            <p class="text-[10px] uppercase text-slate-500 mb-2 font-medium">Text Differences</p>
+                                            <div class="diff-content text-[11px] leading-relaxed max-h-32 overflow-y-auto" x-html="(alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].diff"></div>
+                                        </div>
+                                        
+                                        <!-- AI Analysis -->
+                                        <div x-show="(alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].type === 'match' && alignmentData.has_analysis && (alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].analysis"
+                                             class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                            <p class="text-[10px] uppercase text-blue-600 mb-2 font-medium">Key Differences</p>
+                                            <p class="text-[11px] text-slate-700 leading-relaxed" x-text="(alignmentData.unified_pairs || alignmentData.matched_pairs)[selectedPair].analysis"></p>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        
+                        <!-- RIGHT COLUMN: File 2 Items -->
+                        <div class="flex-1 overflow-y-auto pr-2" style="scrollbar-width: thin;" id="right-scroll-container">
+                            <div class="space-y-2">
+                                <template x-for="(pair, idx) in (alignmentData.unified_pairs || alignmentData.matched_pairs)" :key="`right-${idx}`">
+                                    <div x-show="pair.file2_value"
+                                         @mouseenter="hoveredPair = idx"
+                                         @mouseleave="hoveredPair = null"
+                                         @click="handleCardClick(idx, pair, 'right')"
+                                         :id="`right-${idx}`"
+                                         :class="{
+                                             'cursor-pointer': pair.type === 'match' || (alignmentEditMode && pair.type === 'orphan_file2'),
+                                             'ring-2 ring-blue-400': hoveredPair === idx && pair.type === 'match' && !alignmentEditMode,
+                                             'ring-2 ring-blue-600 shadow-md': selectedPair === idx && pair.type === 'match',
+                                             'ring-2 ring-purple-500 shadow-lg': alignmentEditMode && selectedOrphan2 === idx,
+                                             'ring-1 ring-purple-200': alignmentEditMode && pair.type === 'orphan_file2' && selectedOrphan2 !== idx,
+                                             'opacity-50': hoveredPair !== null && hoveredPair !== idx && selectedPair === null && !alignmentEditMode,
+                                             'opacity-70': pair.type === 'orphan_file2' && !alignmentEditMode
+                                         }"
+                                         class="relationship-node group transition-all duration-200 relative">
+                                        <!-- Similarity Indicator -->
+                                        <div x-show="pair.type === 'match'"
+                                             class="absolute -right-1.5 top-1/2 -translate-y-1/2 w-1 rounded-full"
+                                             :class="{
+                                                 'bg-emerald-500': pair.similarity > 0.8,
+                                                 'bg-blue-500': pair.similarity > 0.6 && pair.similarity <= 0.8,
+                                                 'bg-amber-500': pair.similarity <= 0.6
+                                             }"
+                                             :style="`height: ${16 + pair.similarity * 24}px`"></div>
+                                        
+                                        <!-- Orphan Indicator -->
+                                        <div x-show="pair.type === 'orphan_file2'"
+                                             class="absolute -right-1.5 top-1/2 -translate-y-1/2 w-1 h-6 rounded-full"
+                                             :class="alignmentEditMode && selectedOrphan2 === idx ? 'bg-purple-500' : 'bg-amber-400'"></div>
+                                        
+                                        <!-- Selected Badge -->
+                                        <div x-show="alignmentEditMode && selectedOrphan2 === idx"
+                                             class="absolute -top-2 left-1/2 -translate-x-1/2 z-10">
+                                            <div class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-600 text-white text-[9px] font-bold rounded-full shadow-lg">
+                                                <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                SELECTED
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Card Content -->
+                                        <div class="p-3 border rounded-lg transition-all"
+                                             :class="pair.type === 'orphan_file2' ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-white hover:border-slate-300'">
+                                            <div class="text-xs leading-snug"
+                                                 :class="selectedPair === idx ? '' : 'line-clamp-2'"
+                                                 x-text="pair.file2_value"></div>
+                                            <div class="mt-1.5 flex items-center justify-between">
+                                                <span class="text-[10px] font-mono text-slate-400" x-text="`#${pair.file2_index + 1}`"></span>
+                                                <div class="flex items-center gap-1.5">
+                                                    <span x-show="pair.type === 'orphan_file2'" 
+                                                          class="text-[10px] text-amber-700 bg-amber-200 px-1.5 py-0.5 rounded font-medium">
+                                                        Unmatched
+                                                    </span>
+                                                    <span x-show="pair.manual && pair.type === 'match'" class="text-[10px] text-purple-500" title="Manually matched">✓</span>
+                                                    <span x-show="pair.type === 'match'" 
+                                                          class="text-[10px] font-semibold"
+                                                          :class="{
+                                                              'text-emerald-600': pair.similarity > 0.8,
+                                                              'text-blue-600': pair.similarity > 0.6,
+                                                              'text-amber-600': pair.similarity <= 0.6
+                                                          }"
+                                                          x-text="`${(pair.similarity * 100).toFixed(0)}%`"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </template>
+            </div>
+            
+            <!-- RELATIONSHIP VIEWER CANVAS -->
+            <div x-show="currentCanvasType === 'relationship_viewer'" class="relationship-viewer-container">
+                <div class="p-6 bg-white border border-slate-200 rounded-2xl">
+                    <p class="text-sm text-slate-600 mb-4">Relationship visualization</p>
+                    <div class="markdown-content" x-html="renderMarkdown(stepOutputs[currentViewingStep] || '')"></div>
+                </div>
+            </div>
+            
+            <!-- CHAT INTERFACE CANVAS -->
+            <div x-show="currentCanvasType === 'chat_interface'">
+                <div class="flex flex-col h-[calc(100vh-280px)] bg-white rounded-2xl border border-slate-200 shadow-sm">
+                    <!-- Chat Header -->
+                    <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                        <h3 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                            💬 Chat with Documents
+                            <span x-show="chatSessionId" class="text-xs font-normal text-green-600 bg-green-50 px-2 py-1 rounded-full">Connected</span>
+                            <span x-show="!chatSessionId" class="text-xs font-normal text-amber-600 bg-amber-50 px-2 py-1 rounded-full">Initializing...</span>
+                        </h3>
+                        <p class="text-xs text-slate-600 mt-1">
+                            Ask questions about your uploaded documents. Answers include source citations.
+                            <button x-show="!chatSessionId" @click="initializeChatSession()" class="ml-2 text-blue-600 underline hover:text-blue-800">
+                                Click to initialize
+                            </button>
+                        </p>
+                    </div>
+                    
+                    <!-- Messages Area -->
+                    <div class="flex-1 overflow-y-auto p-6 space-y-4" style="scrollbar-width: thin;" id="chat-messages-container"
+                         x-init="$watch('chatMessages', () => { $nextTick(() => { $el.scrollTop = $el.scrollHeight; }); })">
+                        <template x-for="(msg, idx) in chatMessages" :key="idx">
+                            <div>
+                                <!-- System Message -->
+                                <div x-show="msg.type === 'system'" 
+                                     class="text-center py-2 px-4 bg-slate-50 text-slate-600 text-sm rounded-lg border border-slate-200">
+                                    <span x-text="msg.content"></span>
+                                </div>
+                                
+                                <!-- User Message -->
+                                <div x-show="msg.type === 'user'" class="flex justify-end">
+                                    <div class="max-w-[80%] bg-blue-600 text-white px-4 py-3 rounded-2xl rounded-tr-sm shadow-sm">
+                                        <p class="text-sm" x-text="msg.content"></p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Assistant Message -->
+                                <div x-show="msg.type === 'assistant'" class="flex justify-start">
+                                    <div class="max-w-[80%] bg-slate-100 text-slate-800 px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm">
+                                        <div class="text-sm markdown-content" x-html="renderMarkdown(msg.content)"></div>
+                                        <!-- Sources -->
+                                        <div x-show="msg.sources && msg.sources.length > 0" class="mt-3 pt-3 border-t border-slate-300">
+                                            <p class="text-xs font-semibold text-slate-600 mb-1">📎 Sources:</p>
+                                            <div class="flex flex-wrap gap-1">
+                                                <template x-for="source in msg.sources" :key="source">
+                                                    <span class="inline-block px-2 py-1 bg-white text-slate-700 text-xs rounded-md border border-slate-200" x-text="source"></span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <!-- Loading Indicator -->
+                        <div x-show="isWaitingForChat" class="flex justify-start">
+                            <div class="bg-slate-100 px-4 py-3 rounded-2xl rounded-tl-sm">
+                                <div class="flex items-center gap-2 text-slate-600">
+                                    <div class="flex gap-1">
+                                        <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+                                        <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+                                        <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+                                    </div>
+                                    <span class="text-xs">Thinking...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Input Area -->
+                    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50">
+                        <form @submit.prevent="sendChatMessage()" class="flex gap-2">
+                            <input 
+                                type="text"
+                                x-model="userQuestion"
+                                :disabled="!chatSessionId || isWaitingForChat"
+                                placeholder="Ask a question about your documents..."
+                                class="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:cursor-not-allowed text-sm"
+                                @keydown.enter.prevent="sendChatMessage()"
+                            />
+                            <button 
+                                type="submit"
+                                :disabled="!userQuestion.trim() || !chatSessionId || isWaitingForChat"
+                                class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed font-medium text-sm transition-colors flex items-center gap-2">
+                                <span>Send</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- DIFF VIEWER CANVAS -->
+            <div x-show="currentCanvasType === 'diff_viewer'">
+                <div x-data="{
+                    diffData: null,
+                    structuralData: null,
+                    semanticData: null,
+                    selectedChange: null,
+                    viewMode: 'unified',
+                    showOnlyChanges: false,
+                    changeFilter: 'all',
+                    currentJumpIndex: 0
+                }"
+                     x-init="$watch('stepOutputs', () => { initializeDiffViewer(); })">
+                    
+                    <!-- Diff Controls Header -->
+                    <div class="mb-4 p-4 bg-gradient-to-r from-slate-50 to-blue-50 border border-slate-200 rounded-xl">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-slate-900">Document Comparison</h3>
+                            <div class="flex items-center gap-2">
+                                <!-- View Mode Selector -->
+                                <div class="inline-flex rounded-lg border border-slate-300 bg-white shadow-sm">
+                                    <button @click="viewMode = 'unified'" 
+                                            :class="viewMode === 'unified' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-50'"
+                                            class="px-3 py-1.5 text-xs font-medium rounded-l-lg transition-colors">
+                                        Unified
+                                    </button>
+                                    <button @click="viewMode = 'split'" 
+                                            :class="viewMode === 'split' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-50'"
+                                            class="px-3 py-1.5 text-xs font-medium border-l border-slate-300 rounded-r-lg transition-colors">
+                                        Split View
+                                    </button>
+                                </div>
+                                
+                                <!-- Show Only Changes Toggle -->
+                                <label class="inline-flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50">
+                                    <input type="checkbox" x-model="showOnlyChanges" class="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-xs font-medium text-slate-700">Changes only</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Statistics Summary -->
+                        <div x-show="diffData" class="flex items-center gap-6 text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="text-slate-600">Words:</span>
+                                <span class="font-semibold text-slate-900" x-text="diffData?.statistics?.total_words || 0"></span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                <span class="text-slate-600">Added:</span>
+                                <span class="font-semibold text-emerald-700" x-text="diffData?.statistics?.added_words || 0"></span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                <span class="text-slate-600">Removed:</span>
+                                <span class="font-semibold text-red-700" x-text="diffData?.statistics?.removed_words || 0"></span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-slate-600">Changed:</span>
+                                <span class="font-semibold text-blue-700" x-text="(diffData?.statistics?.change_percentage || 0) + '%'"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Main Diff Display -->
+                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                        <!-- Unified View -->
+                        <div x-show="viewMode === 'unified'" class="p-6 overflow-auto max-h-[600px]" style="scrollbar-width: thin;">
+                            <div x-show="!diffData" class="text-center py-12 text-slate-400">
+                                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center text-2xl">⚖️</div>
+                                <p class="text-sm">Processing document comparison...</p>
+                            </div>
+                            
+                            <div x-show="diffData" class="diff-content" x-html="diffData?.diff_html || ''"></div>
+                        </div>
+                        
+                        <!-- Split View -->
+                        <div x-show="viewMode === 'split'" class="grid grid-cols-2 gap-4 p-6 overflow-auto max-h-[600px]" style="scrollbar-width: thin;">
+                            <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                                <h4 class="text-xs font-semibold text-slate-700 mb-3 pb-2 border-b border-slate-300" x-text="diffData?.doc1_name || 'Document 1'"></h4>
+                                <div class="text-sm text-slate-900 space-y-2" x-html="renderSplitDoc1()"></div>
+                            </div>
+                            <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                                <h4 class="text-xs font-semibold text-slate-700 mb-3 pb-2 border-b border-slate-300" x-text="diffData?.doc2_name || 'Document 2'"></h4>
+                                <div class="text-sm text-slate-900 space-y-2" x-html="renderSplitDoc2()"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Analysis Sections (Collapsible) -->
+                    <div x-show="structuralData || semanticData" class="mt-6 space-y-4">
+                        <!-- Structural Analysis -->
+                        <details x-show="structuralData" class="group bg-white border border-slate-200 rounded-xl overflow-hidden" open>
+                            <summary class="cursor-pointer px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition-colors flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <h4 class="text-sm font-semibold text-slate-900">Structural Analysis</h4>
+                                </div>
+                                <div class="flex items-center gap-3 text-xs text-slate-600">
+                                    <span x-show="structuralData?.summary" x-text="`${structuralData.summary.sections_added || 0} added, ${structuralData.summary.sections_removed || 0} removed, ${structuralData.summary.sections_reordered || 0} reordered`"></span>
+                                    <svg class="w-4 h-4 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </summary>
+                            <div class="p-6 space-y-4">
+                                <div x-show="structuralData?.added_sections?.length > 0">
+                                    <h5 class="text-xs font-semibold text-emerald-700 mb-2">Added Sections</h5>
+                                    <ul class="space-y-1">
+                                        <template x-for="section in structuralData.added_sections" :key="section.text">
+                                            <li class="text-xs text-slate-700 flex items-start gap-2">
+                                                <span class="text-emerald-600">+</span>
+                                                <span x-text="section.text"></span>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+                                <div x-show="structuralData?.removed_sections?.length > 0">
+                                    <h5 class="text-xs font-semibold text-red-700 mb-2">Removed Sections</h5>
+                                    <ul class="space-y-1">
+                                        <template x-for="section in structuralData.removed_sections" :key="section.text">
+                                            <li class="text-xs text-slate-700 flex items-start gap-2">
+                                                <span class="text-red-600">-</span>
+                                                <span x-text="section.text"></span>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+                                <div x-show="structuralData?.reordered_sections?.length > 0">
+                                    <h5 class="text-xs font-semibold text-blue-700 mb-2">Reordered Sections</h5>
+                                    <ul class="space-y-1">
+                                        <template x-for="section in structuralData.reordered_sections" :key="section.heading">
+                                            <li class="text-xs text-slate-700">
+                                                <span x-text="section.heading"></span>
+                                                <span class="text-slate-500">moved from position</span>
+                                                <span class="font-semibold" x-text="section.old_position + 1"></span>
+                                                <span class="text-slate-500">to</span>
+                                                <span class="font-semibold" x-text="section.new_position + 1"></span>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </div>
+                        </details>
+                        
+                        <!-- Semantic Analysis -->
+                        <details x-show="semanticData" class="group bg-white border border-slate-200 rounded-xl overflow-hidden">
+                            <summary class="cursor-pointer px-6 py-4 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 transition-colors flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                    <h4 class="text-sm font-semibold text-slate-900">Semantic Analysis</h4>
+                                </div>
+                                <div class="flex items-center gap-3 text-xs text-slate-600">
+                                    <span x-show="semanticData?.summary" x-text="`${semanticData.summary.moved_chunks || 0} moved, ${semanticData.summary.paraphrased_chunks || 0} paraphrased, ${semanticData.summary.new_chunks || 0} new`"></span>
+                                    <svg class="w-4 h-4 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </summary>
+                            <div class="p-6 space-y-4">
+                                <div x-show="semanticData?.moved_content?.length > 0">
+                                    <h5 class="text-xs font-semibold text-amber-700 mb-2">Moved Content</h5>
+                                    <ul class="space-y-2">
+                                        <template x-for="item in semanticData.moved_content.slice(0, 5)" :key="item.chunk1_id">
+                                            <li class="text-xs p-2 bg-amber-50 rounded border border-amber-200">
+                                                <div class="text-slate-700 mb-1" x-text="item.chunk1_text + '...'"></div>
+                                                <div class="text-amber-700">
+                                                    <span>Moved by</span>
+                                                    <span class="font-semibold" x-text="Math.abs(item.position_shift)"></span>
+                                                    <span>positions</span>
+                                                    <span class="ml-2 text-xs">(<span x-text="(item.similarity * 100).toFixed(0)"></span>% similar)</span>
+                                                </div>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+                                <div x-show="semanticData?.paraphrased_content?.length > 0">
+                                    <h5 class="text-xs font-semibold text-purple-700 mb-2">Paraphrased Content</h5>
+                                    <ul class="space-y-2">
+                                        <template x-for="item in semanticData.paraphrased_content.slice(0, 5)" :key="item.chunk1_id">
+                                            <li class="text-xs p-2 bg-purple-50 rounded border border-purple-200">
+                                                <div class="text-slate-700 mb-1" x-text="item.chunk1_text + '...'"></div>
+                                                <div class="text-purple-700">
+                                                    <span>Similarity:</span>
+                                                    <span class="font-semibold" x-text="(item.similarity * 100).toFixed(0) + '%'"></span>
+                                                </div>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+                                <div x-show="semanticData?.new_content?.length > 0">
+                                    <h5 class="text-xs font-semibold text-emerald-700 mb-2">New Content</h5>
+                                    <p class="text-xs text-slate-600 mb-2"><span x-text="semanticData.new_content.length"></span> new sections added</p>
+                                </div>
+                            </div>
+                        </details>
+                        
+                        <!-- Detailed Analysis -->
+                        <details class="group bg-white border border-slate-200 rounded-xl overflow-hidden">
+                            <summary class="cursor-pointer px-6 py-4 bg-gradient-to-r from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 transition-colors flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <h4 class="text-sm font-semibold text-slate-900">Detailed Change Analysis</h4>
+                                </div>
+                                <svg class="w-4 h-4 group-open:rotate-180 transition-transform text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </summary>
+                            <div class="p-6">
+                                <div class="prose prose-sm max-w-none markdown-content" 
+                                     x-html="renderMarkdown(stepOutputs[currentViewingStep === 4 ? 4 : (stepOutputs.length > 4 ? 4 : currentViewingStep)] || '')"></div>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AUDIO PLAYER CANVAS -->
+            <div x-show="currentCanvasType === 'audio_player'">
+                <div class="p-6 bg-white border border-slate-200 rounded-2xl">
+                    <div class="mb-4 markdown-content" x-html="renderMarkdown(stepOutputs[currentViewingStep] || '')"></div>
+                </div>
+            </div>
+            
+            <!-- IMAGE VIEWER CANVAS -->
+            <div x-show="currentCanvasType === 'image_viewer'" 
+                 class="p-6 bg-white border border-slate-200 rounded-2xl">
+                <div class="markdown-content" x-html="renderMarkdown(stepOutputs[currentViewingStep] || '')"></div>
+            </div>
+            
+            <!-- PDF VIEWER CANVAS -->
+            <div x-show="currentCanvasType === 'pdf_viewer'" 
+                 class="p-6 bg-white border border-slate-200 rounded-2xl">
+                <div class="markdown-content" x-html="renderMarkdown(stepOutputs[currentViewingStep] || '')"></div>
+            </div>
+            
+            <!-- CODE EDITOR CANVAS -->
+            <div x-show="currentCanvasType === 'code_editor'" 
+                 class="p-6 bg-white border border-slate-200 rounded-2xl">
+                <div class="markdown-content" x-html="renderMarkdown(stepOutputs[currentViewingStep] || '')"></div>
+            </div>
+            
+            <!-- STANDARD MARKDOWN CANVAS (fallback) -->
+            <div x-show="currentCanvasType === 'standard' || !currentCanvasType">
+                <div class="p-6 bg-white border border-slate-200 rounded-2xl markdown-content"
+                     x-html="renderMarkdown(stepOutputs[currentViewingStep] || '')">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Export Button -->
+        <div class="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between flex-shrink-0" x-show="!processing">
+            <div>
+                <button @click="exportToWord()" 
+                        class="primary-button">
+                    📄 Export to Word
+                </button>
+                <a x-show="downloadUrl" :href="downloadUrl" download 
+                   class="ml-3 text-sm text-slate-500 hover:text-slate-800">
+                    ⬇️ Save latest version
+                </a>
+            </div>
+            <p class="text-xs text-slate-400">Studio keeps your edits in sync</p>
+        </div>
+    </div>
+</div>

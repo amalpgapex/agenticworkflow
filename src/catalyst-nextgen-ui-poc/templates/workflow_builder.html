@@ -1,0 +1,914 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Builder - InK Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
+    <!-- Modular CSS & JS -->
+    <link rel="stylesheet" href="/static/css/workflow-builder.css">
+    <link rel="stylesheet" href="/static/css/workflow-canvas.css">
+    <script src="/static/js/validation.js"></script>
+    <script src="/static/js/visual-canvas.js"></script>
+    <script src="/static/js/workflow-builder.js"></script>
+    
+    <style>
+        /* Page-specific styles (body font, smoothing) */
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+            background: var(--wb-bg);
+            color: var(--wb-text);
+            letter-spacing: -0.01em;
+        }
+
+        /* All other styles moved to /static/css/workflow-builder.css for modularity */
+    </style>
+</head>
+<body x-data="workflowBuilder()" x-init="init()">
+    
+    <div class="builder-container">
+        
+        <!-- Header -->
+        <div class="builder-header">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h1 class="text-3xl font-semibold mb-2" style="letter-spacing: -0.02em;">
+                        <span x-show="!editingExisting">New Direction</span>
+                        <span x-show="editingExisting" x-text="'Edit: ' + workflow.name"></span>
+                    </h1>
+                    <div class="flex items-start gap-2">
+                    <p class="text-sm text-slate-500">Build your workflow step by step. Drag tools from the right, arrange them in order.</p>
+                        <button @click="showQuickGuide = !showQuickGuide" 
+                                class="text-sm text-blue-600 hover:text-blue-800 flex-shrink-0"
+                                title="Show quick guide">
+                            <span x-show="!showQuickGuide">â“ Help</span>
+                            <span x-show="showQuickGuide">✕ Close</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Quick Guide (collapsible) -->
+                    <div x-show="showQuickGuide" 
+                         x-collapse
+                         class="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                        <h4 class="font-semibold text-blue-900 mb-2">Quick Start Guide</h4>
+                        <ol class="space-y-2 text-blue-800 text-xs">
+                            <li><strong>1. Name your workflow</strong> - Give it a clear, descriptive name and unique key</li>
+                            <li><strong>2. Add steps</strong> - Click "✨ Templates" for pre-built steps, or drag tools from the toolbox</li>
+                            <li><strong>3. Configure steps</strong> - Click any step to expand and edit. Use {document_content} and {previous_output} in prompts</li>
+                            <li><strong>4. Set up options</strong> - Add variables like {topic} in prompts, then click + to create user options</li>
+                            <li><strong>5. Validate & save</strong> - Fix any errors shown above, then click "Save Direction"</li>
+                        </ol>
+                        <div class="mt-3 pt-3 border-t border-blue-200 text-xs text-blue-700">
+                            <p><strong>💡 Pro Tips:</strong></p>
+                            <ul class="mt-1 space-y-1 list-disc list-inside">
+                                <li>Drag the ⋮⋮ handle to reorder steps</li>
+                                <li>Press ESC to collapse expanded steps</li>
+                                <li>Click "📥 Export" to download your workflow as JSON</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button @click="saveWorkflow()" 
+                            class="btn btn-primary"
+                            :class="validationResult.hasIssues && validationResult.errors.length > 0 ? 'opacity-75' : ''">
+                        <span x-show="!validationResult.hasIssues || validationResult.errors.length === 0">💾</span>
+                        <span x-show="validationResult.errors.length > 0">⚠️</span>
+                        <span>Save Direction</span>
+                        <span x-show="validationResult.errors.length > 0" class="text-xs">
+                            ({{validationResult.errors.length}} errors)
+                        </span>
+                    </button>
+                    <button @click="exportWorkflow()" class="btn btn-ghost">
+                        <span>📥</span> Export
+                    </button>
+                    <button @click="$refs.importFile.click()" class="btn btn-ghost">
+                        <span>📤</span> Import
+                    </button>
+                    <input type="file" 
+                           x-ref="importFile"
+                           @change="importWorkflow($event)"
+                           accept=".json"
+                           class="hidden">
+                    <a href="/studio" class="btn btn-ghost">
+                        <span>←</span> Back to Studio
+                    </a>
+                </div>
+            </div>
+
+            <!-- Workflow Metadata -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-2">
+                        Direction Name
+                        <span x-show="getFieldValidation('name')" 
+                              x-text="getFieldValidation('name') ? '' : ''" 
+                              :class="getFieldValidation('name')?.severity === 'error' ? 'text-red-500' : 'text-amber-500'">
+                        </span>
+                    </label>
+                    <input type="text" 
+                           x-model="workflow.name" 
+                           @blur="validateField('workflowName', workflow.name)"
+                           @input.debounce.300ms="validateField('workflowName', workflow.name)"
+                           placeholder="e.g., Technical Guide to FAQs" 
+                           class="input-field"
+                           :class="getFieldValidation('name') ? (getFieldValidation('name').severity === 'error' ? 'border-red-500' : 'border-amber-400') : ''">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-2 flex items-center gap-2">
+                        Direction Key
+                        <span class="tooltip">
+                            <span class="help-icon">?</span>
+                            <span class="tooltip-text multiline">
+                                Unique identifier for this workflow. Use lowercase letters, numbers, and underscores only.
+                            </span>
+                        </span>
+                    </label>
+                    <input type="text" 
+                           x-model="workflow.key" 
+                           @blur="validateField('workflowKey', workflow.key)"
+                           @input.debounce.300ms="validateField('workflowKey', workflow.key)"
+                           placeholder="e.g., tech_to_faq" 
+                           class="input-field" 
+                           :class="getFieldValidation('key') ? (getFieldValidation('key').severity === 'error' ? 'border-red-500' : 'border-amber-400') : ''"
+                           :disabled="editingExisting">
+                </div>
+            </div>
+            <div class="mt-4">
+                <label class="block text-xs font-semibold text-slate-500 mb-2">Description</label>
+                <textarea x-model="workflow.description" placeholder="What does this direction do?" 
+                          class="input-field" rows="2"></textarea>
+            </div>
+        </div>
+
+        <!-- Issues Panel (Only shows when there are validation issues) -->
+        <div x-show="validationResult.hasIssues" 
+             x-collapse
+             class="bg-white border border-slate-200 rounded-xl p-4 mb-6 fade-in">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg" x-show="validationResult.errors.length > 0">⚠️</span>
+                    <span class="text-lg" x-show="validationResult.errors.length === 0 && validationResult.warnings.length > 0">ðŸ’¡</span>
+                    <h3 class="text-sm font-semibold text-slate-900">
+                        <span x-text="validationResult.errors.length > 0 ? `${validationResult.errors.length} Issue${validationResult.errors.length > 1 ? 's' : ''} Found` : `${validationResult.warnings.length} Suggestion${validationResult.warnings.length > 1 ? 's' : ''}`"></span>
+                    </h3>
+                </div>
+                <button @click="validationResult.hasIssues = false" 
+                        class="text-xs text-slate-400 hover:text-slate-600">
+                    Hide
+                </button>
+            </div>
+            
+            <!-- Errors -->
+            <div x-show="validationResult.errors.length > 0" class="space-y-2">
+                <template x-for="error in validationResult.errors" :key="error.field">
+                    <div class="validation-issue-error flex items-start gap-2 p-2 bg-red-50 border border-red-200 rounded-lg text-xs">
+                        <span class="text-red-600 flex-shrink-0">✗</span>
+                        <div class="flex-1">
+                            <p class="text-red-900 font-medium" x-text="error.message"></p>
+                        </div>
+                        <button x-show="error.stepIndex !== undefined" 
+                                @click="editStep(error.stepIndex)" 
+                                class="text-red-600 hover:text-red-800 font-semibold flex-shrink-0 px-2 py-1 hover:bg-red-100 rounded transition-all">
+                            Fix ←’
+                        </button>
+                    </div>
+                </template>
+            </div>
+            
+            <!-- Warnings -->
+            <div x-show="validationResult.warnings.length > 0" class="space-y-2" :class="validationResult.errors.length > 0 ? 'mt-2' : ''">
+                <template x-for="warning in validationResult.warnings" :key="warning.field">
+                    <div class="validation-issue-warning flex items-start gap-2 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs">
+                        <span class="text-amber-600 flex-shrink-0">⚠</span>
+                        <div class="flex-1">
+                            <p class="text-amber-900 font-medium" x-text="warning.message"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- View Toggle -->
+        <div class="flex items-center justify-center gap-2 mb-6">
+            <button @click="canvasViewMode = 'list'" 
+                    :class="canvasViewMode === 'list' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200'"
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                📋 List View
+            </button>
+            <button @click="canvasViewMode = 'visual'" 
+                    :class="canvasViewMode === 'visual' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200'"
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                🎨 Canvas View
+            </button>
+        </div>
+
+        <!-- LIST VIEW (Current Design) -->
+        <div x-show="canvasViewMode === 'list'" class="grid grid-cols-12 gap-6">
+            
+            <!-- Main Canvas - Workflow Steps -->
+            <div class="col-span-8">
+                <div class="workflow-canvas">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-lg font-semibold">Workflow Steps</h2>
+                        <span class="text-xs text-slate-400" x-text="`${workflow.steps.length} step${workflow.steps.length !== 1 ? 's' : ''}`"></span>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div x-show="workflow.steps.length === 0" class="empty-state">
+                        <div class="empty-state-icon">
+                            🎯
+                        </div>
+                        <h3 class="text-lg font-semibold text-slate-700 mb-2">Start Building</h3>
+                        <p class="text-sm text-slate-500 max-w-md mx-auto">
+                            Drag tools from the toolbox on the right to add steps to your workflow.
+                            Each step transforms the document in some way.
+                        </p>
+                    </div>
+
+                    <!-- Steps Container -->
+                    <div id="steps-container" class="space-y-0">
+                        <template x-for="(step, index) in workflow.steps" :key="index">
+                            <div class="fade-in">
+                                <!-- Step Card -->
+                                <div class="step-card-container" 
+                                     :data-index="index"
+                                     :data-expanded="activeStep === index">
+                                    
+                                    <!-- Collapsed View (Step Header) -->
+                                    <div class="step-card-header" 
+                                         :class="{ 
+                                             'step-active': activeStep === index,
+                                             'step-has-error': getFieldValidation(`step_${index}_name`) || getFieldValidation(`step_${index}_prompt`)
+                                         }"
+                                         @click="toggleStep(index)"
+                                         @keydown.enter="toggleStep(index)"
+                                         @keydown.space.prevent="toggleStep(index)"
+                                         tabindex="0">
+                                        
+                                        <!-- Drag Handle -->
+                                        <div class="step-drag-handle">
+                                            <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor" opacity="0.3">
+                                                <circle cx="3" cy="4" r="1.5"/>
+                                                <circle cx="9" cy="4" r="1.5"/>
+                                                <circle cx="3" cy="8" r="1.5"/>
+                                                <circle cx="9" cy="8" r="1.5"/>
+                                                <circle cx="3" cy="12" r="1.5"/>
+                                                <circle cx="9" cy="12" r="1.5"/>
+                                            </svg>
+                                        </div>
+                                        
+                                        <!-- Step Number -->
+                                        <div class="step-number" x-text="index + 1"></div>
+                                        
+                                        <!-- Step Info -->
+                                        <div class="step-info flex-1">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h3 class="step-name" x-text="step.step_name || 'Unnamed Step'"></h3>
+                                                <span class="step-type-badge" 
+                                                      :class="{
+                                                          'badge-llm': step.step_type === 'llm_prompt',
+                                                          'badge-tool': step.step_type === 'alignment' || step.step_type === 'podcast_generator',
+                                                          'badge-analysis': step.step_type === 'fact_check' || step.step_type === 'data_validation'
+                                                      }"
+                                                      x-text="step.step_type || 'llm_prompt'"></span>
+                                                <span x-show="getFieldValidation(`step_${index}_name`) || getFieldValidation(`step_${index}_prompt`)" 
+                                                      class="text-red-500 text-xs">✗</span>
+                                                <span x-show="activeStep === index && !getFieldValidation(`step_${index}_name`) && !getFieldValidation(`step_${index}_prompt`)" 
+                                                      class="text-green-500 text-xs">✓</span>
+                                            </div>
+                                            <!-- Step Preview Line -->
+                                            <p class="step-preview" x-show="activeStep !== index">
+                                                <span x-text="getStepPreview(step)"></span>
+                                            </p>
+                                </div>
+
+                                        <!-- Expand/Collapse Icon -->
+                                        <div class="step-expand-icon">
+                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" 
+                                                 :style="`transform: rotate(${activeStep === index ? 180 : 0}deg); transition: transform 200ms ease-out`">
+                                                <path d="M4 6l4 4 4-4"/>
+                                            </svg>
+                    </div>
+
+                                        <!-- Actions -->
+                                        <div class="step-actions" @click.stop>
+                                            <button @click="deleteStep(index)" 
+                                                    class="step-delete-btn"
+                                                    title="Delete step">
+                                                🗑️
+                                            </button>
+                    </div>
+                </div>
+
+                                    <!-- Expanded View (Step Body) -->
+                                    <div x-show="activeStep === index" 
+                                         x-collapse
+                                         class="step-card-body">
+                                        <div class="step-editor-content">
+                                            <!-- This content moved from property-editor below -->
+                        <div class="space-y-4">
+                            <div>
+                                                    <label class="block text-xs font-semibold text-slate-500 mb-2">
+                                                        Step Name
+                                                        <span x-show="getFieldValidation(`step_${index}_name`)" 
+                                                              class="text-red-500 text-xs ml-1">✗</span>
+                                                    </label>
+                                                    <input type="text" 
+                                                           x-model="step.step_name" 
+                                                           @blur="validateField('stepName', step.step_name, { stepIndex: index })"
+                                                           @input.debounce.300ms="validateField('stepName', step.step_name, { stepIndex: index })"
+                                                           class="input-field" 
+                                                           :class="getFieldValidation(`step_${index}_name`) ? 'border-red-500' : ''"
+                                                           placeholder="e.g., Extract Key Topics">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 mb-2">Step Type</label>
+                                                    <select x-model="step.step_type" class="input-field">
+                                    <option value="llm_prompt">LLM Prompt</option>
+                                    <option value="web_search">Web Search</option>
+                                    <option value="fact_check">Fact Check</option>
+                                    <option value="data_validation">Data Validation</option>
+                                    <option value="content_enrichment">Content Enrichment</option>
+                                    <option value="podcast_generator">Podcast Generator</option>
+                                    <option value="alignment">Excel Alignment</option>
+                                    <option value="compare_analysis">Compare Analysis</option>
+                                </select>
+                            </div>
+                                                <div x-show="step.step_type === 'llm_prompt'">
+                                                    <label class="block text-xs font-semibold text-slate-500 mb-2">
+                                                        Prompt Template
+                                                        <span x-show="getFieldValidation(`step_${index}_prompt`)" 
+                                                              class="text-red-500 text-xs ml-1">✗</span>
+                                                    </label>
+                                                    <textarea x-model="step.prompt" 
+                                                              @input="detectVariablesInPrompt(index)"
+                                                              @blur="validateField('stepPrompt', step.prompt, { stepIndex: index, stepType: step.step_type })"
+                                          class="input-field font-mono text-xs" 
+                                                              :class="getFieldValidation(`step_${index}_prompt`) ? 'border-red-500' : ''"
+                                          rows="8"
+                                          placeholder="Enter your prompt here. Use {document_content} and {previous_output} as placeholders."></textarea>
+                                <p class="text-xs text-slate-400 mt-2">
+                                    ðŸ’¡ Built-in: <code class="bg-slate-100 px-1 rounded">{document_content}</code>, 
+                                    <code class="bg-slate-100 px-1 rounded">{previous_output}</code>
+                                    <br>Custom variables: Use <code class="bg-slate-100 px-1 rounded">{your_variable}</code> and define options below
+                                </p>
+                                
+                                <!-- Detected Variables -->
+                                                    <div x-show="getDetectedVariables(index).length > 0" class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="text-sm font-semibold text-blue-900">Variables Detected:</span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2">
+                                                            <template x-for="variable in getDetectedVariables(index)" :key="variable">
+                                            <span class="inline-flex items-center gap-1 px-2 py-1 bg-white border border-blue-300 rounded text-xs font-mono text-blue-700">
+                                                <span x-text="'{' + variable + '}'"></span>
+                                                <button @click="addOptionForVariable(variable)" 
+                                                        x-show="!workflow.options[variable]"
+                                                        class="text-blue-600 hover:text-blue-800 font-bold">
+                                                    +
+                                                </button>
+                                                <span x-show="workflow.options[variable]" class="text-green-600">✓</span>
+                                            </span>
+                                        </template>
+                                    </div>
+                                    <p class="text-xs text-blue-600 mt-2">
+                                        Click <strong>+</strong> to define user options for a variable
+                                    </p>
+                                </div>
+                            </div>
+                                                
+                                                <!-- Done Editing Button -->
+                                                <div class="flex justify-end pt-3 border-t">
+                                                    <button @click="activeStep = null" class="btn btn-ghost text-xs">
+                                                        Done Editing ▲
+                                                    </button>
+                            </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Connector -->
+                                <div x-show="index < workflow.steps.length - 1" class="step-connector"></div>
+                        </div>
+                    </template>
+                    </div>
+
+                    <!-- Drop Zone when empty -->
+                    <div x-show="workflow.steps.length === 0" class="drop-zone" id="drop-zone">
+                        Drag a tool here to start
+                    </div>
+                </div>
+
+                <!-- Variables Overview Panel -->
+                <div x-show="getAllWorkflowVariables().length > 0" class="property-editor fade-in mt-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-lg font-semibold">Variables Overview</h3>
+                            <span class="tooltip">
+                                <span class="help-icon">?</span>
+                                <span class="tooltip-text multiline">
+                                    All custom variables detected across your workflow steps
+                                </span>
+                            </span>
+                        </div>
+                        <button @click="showVariablesPanel = !showVariablesPanel" 
+                                class="text-sm text-blue-600 hover:text-blue-800">
+                            <span x-show="!showVariablesPanel">Show All</span>
+                            <span x-show="showVariablesPanel">Hide</span>
+                        </button>
+                    </div>
+                    
+                    <div x-show="showVariablesPanel" class="space-y-2">
+                        <p class="text-xs text-slate-600 mb-3">
+                            Variables are placeholders in your prompts that users fill in when running the workflow.
+                        </p>
+                        
+                        <template x-for="varInfo in getAllWorkflowVariables()" :key="varInfo.name">
+                            <div class="border border-slate-200 rounded-lg p-3 bg-white hover:border-blue-300 transition-all">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <code class="text-sm font-mono bg-purple-50 px-2 py-1 rounded text-purple-700 font-semibold" 
+                                                  x-text="'{' + varInfo.name + '}'"></code>
+                                            <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+                                                  :class="workflow.options[varInfo.name] ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'"
+                                                  x-text="workflow.options[varInfo.name] ? 'Configured ✓' : 'Needs options'"></span>
+                                        </div>
+                                        
+                                        <!-- Usage information -->
+                                        <div class="flex items-center gap-2 text-xs text-slate-500 mb-2">
+                                            <span x-text="`Used in ${varInfo.usage.length} step${varInfo.usage.length !== 1 ? 's' : ''}`"></span>
+                                            <span>•</span>
+                                            <div class="flex items-center gap-1">
+                                                <template x-for="stepIdx in varInfo.usage" :key="stepIdx">
+                                                    <button @click="editStep(stepIdx)" 
+                                                            class="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-all"
+                                                            :title="`Go to: ${workflow.steps[stepIdx]?.step_name || 'Step ' + (stepIdx + 1)}`">
+                                                        <span x-text="stepIdx + 1"></span>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Option info if configured -->
+                                        <div x-show="workflow.options[varInfo.name]" class="text-xs text-slate-600">
+                                            <span x-text="getOptionTypeLabel(workflow.options[varInfo.name])"></span>
+                                            <span x-show="workflow.options[varInfo.name]?.label" class="text-slate-400">
+                                                • "<span x-text="workflow.options[varInfo.name]?.label"></span>"
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Actions -->
+                                    <div class="flex flex-col gap-1">
+                                        <button x-show="!workflow.options[varInfo.name]"
+                                                @click="addOptionForVariable(varInfo.name)" 
+                                                class="text-xs text-blue-600 hover:text-blue-800 font-semibold px-2 py-1 hover:bg-blue-50 rounded transition-all">
+                                            + Add Options
+                                        </button>
+                                        <button x-show="workflow.options[varInfo.name]"
+                                                @click="scrollToOption(varInfo.name)" 
+                                                class="text-xs text-slate-600 hover:text-slate-800 px-2 py-1 hover:bg-slate-50 rounded transition-all">
+                                            âœï¸ Edit
+                                        </button>
+                                    </div>
+                            </div>
+                        </div>
+                    </template>
+                    </div>
+                    
+                    <div x-show="!showVariablesPanel" class="text-sm text-slate-500">
+                        <span x-text="getAllWorkflowVariables().length"></span> variable<span x-show="getAllWorkflowVariables().length !== 1">s</span> detected
+                    </div>
+                </div>
+
+                <!-- Options Manager -->
+                <div x-show="Object.keys(workflow.options).length > 0" class="property-editor fade-in mt-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold">Direction Options</h3>
+                        <button @click="showOptionsManager = !showOptionsManager" 
+                                class="text-sm text-blue-600 hover:text-blue-800">
+                            <span x-show="!showOptionsManager">Show All</span>
+                            <span x-show="showOptionsManager">Hide</span>
+                        </button>
+                    </div>
+                    
+                    <div x-show="showOptionsManager" class="space-y-4">
+                        <p class="text-sm text-slate-600">Define the choices users will see when running this direction.</p>
+                        
+                        <template x-for="(option, key) in workflow.options" :key="key">
+                            <div class="border border-slate-200 rounded-lg p-4 bg-white transition-all"
+                                 :data-option-key="key">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <code class="text-sm font-mono bg-blue-50 px-2 py-1 rounded text-blue-700" x-text="'{' + key + '}'"></code>
+                                            <span class="text-xs text-slate-400">variable</span>
+                                        </div>
+                                        
+                                        <!-- Option Type Selector -->
+                                        <div class="mb-3">
+                                            <label class="text-xs font-semibold text-slate-600 mb-1 block flex items-center gap-2">
+                                                Option Type
+                                                <span class="tooltip">
+                                                    <span class="help-icon">?</span>
+                                                    <span class="tooltip-text multiline">
+                                                        Choose how users will provide this value when running the workflow
+                                                    </span>
+                                                </span>
+                                            </label>
+                                            <select x-model="option.type" 
+                                                    @change="handleOptionTypeChange(key, option.type)"
+                                                    class="input-field text-sm">
+                                                <option value="select">Dropdown (Select)</option>
+                                                <option value="number">Number Input</option>
+                                                <option value="checkbox">Checkbox (Yes/No)</option>
+                                                <option value="text">Text Input</option>
+                                                <option value="textarea">Text Area (Multi-line)</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <input type="text" 
+                                               x-model="option.label" 
+                                               placeholder="Label (what users see)"
+                                               class="input-field mb-2 text-sm">
+                                        <textarea x-model="option.description" 
+                                                  placeholder="Description (optional help text)"
+                                                  class="input-field text-xs"
+                                                  rows="2"></textarea>
+                                    </div>
+                                    <button @click="deleteOption(key)" 
+                                            class="text-red-500 hover:text-red-700 ml-3">
+                                        🗑️
+                                    </button>
+                                </div>
+                                
+                                <!-- Number-specific configuration -->
+                                <div x-show="option.type === 'number'" class="mt-3 pt-3 border-t">
+                                    <div class="grid grid-cols-3 gap-3">
+                                        <div>
+                                            <label class="text-xs font-semibold text-slate-600">Min Value</label>
+                                            <input type="number" 
+                                                   x-model.number="option.min" 
+                                                   placeholder="0"
+                                                   class="input-field text-xs mt-1">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-semibold text-slate-600">Max Value</label>
+                                            <input type="number" 
+                                                   x-model.number="option.max" 
+                                                   placeholder="100"
+                                                   class="input-field text-xs mt-1">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-semibold text-slate-600">Step</label>
+                                            <input type="number" 
+                                                   x-model.number="option.step" 
+                                                   placeholder="1"
+                                                   class="input-field text-xs mt-1">
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <label class="text-xs font-semibold text-slate-600">Default Value</label>
+                                        <input type="number" 
+                                               x-model.number="option.default" 
+                                               placeholder="0"
+                                               class="input-field text-xs mt-1">
+                                    </div>
+                                </div>
+                                
+                                <!-- Checkbox-specific configuration -->
+                                <div x-show="option.type === 'checkbox'" class="mt-3 pt-3 border-t">
+                                    <div>
+                                        <label class="flex items-center gap-2">
+                                            <input type="checkbox" 
+                                                   x-model="option.default" 
+                                                   class="rounded">
+                                            <span class="text-xs font-semibold text-slate-600">Checked by default</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Text-specific configuration -->
+                                <div x-show="option.type === 'text'" class="mt-3 pt-3 border-t">
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="text-xs font-semibold text-slate-600">Placeholder</label>
+                                            <input type="text" 
+                                                   x-model="option.placeholder" 
+                                                   placeholder="Enter text..."
+                                                   class="input-field text-xs mt-1">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-semibold text-slate-600">Max Length</label>
+                                            <input type="number" 
+                                                   x-model.number="option.maxLength" 
+                                                   placeholder="100"
+                                                   class="input-field text-xs mt-1">
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <label class="text-xs font-semibold text-slate-600">Default Value</label>
+                                        <input type="text" 
+                                               x-model="option.default" 
+                                               class="input-field text-xs mt-1">
+                                    </div>
+                                </div>
+                                
+                                <!-- Textarea-specific configuration -->
+                                <div x-show="option.type === 'textarea'" class="mt-3 pt-3 border-t">
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="text-xs font-semibold text-slate-600">Rows</label>
+                                            <input type="number" 
+                                                   x-model.number="option.rows" 
+                                                   placeholder="4"
+                                                   class="input-field text-xs mt-1">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-semibold text-slate-600">Max Length</label>
+                                            <input type="number" 
+                                                   x-model.number="option.maxLength" 
+                                                   placeholder="500"
+                                                   class="input-field text-xs mt-1">
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <label class="text-xs font-semibold text-slate-600">Placeholder</label>
+                                        <input type="text" 
+                                               x-model="option.placeholder" 
+                                               placeholder="Enter text..."
+                                               class="input-field text-xs mt-1">
+                                    </div>
+                                </div>
+                                
+                                <!-- Choices (for select type only) -->
+                                <div x-show="!option.type || option.type === 'select'" class="mt-3 pt-3 border-t">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <label class="text-xs font-semibold text-slate-600">Choices</label>
+                                        <button @click="addChoiceToOption(key)" 
+                                                class="text-xs text-blue-600 hover:text-blue-800">
+                                            + Add Choice
+                                        </button>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <template x-for="(choice, idx) in option.choices" :key="idx">
+                                            <div class="flex items-center gap-2">
+                                                <input type="text" 
+                                                       x-model="choice.value" 
+                                                       placeholder="Value (used in prompt)"
+                                                       class="input-field text-xs flex-1">
+                                                <input type="text" 
+                                                       x-model="choice.label" 
+                                                       placeholder="Label (what users see)"
+                                                       class="input-field text-xs flex-1">
+                                                <button @click="removeChoiceFromOption(key, idx)" 
+                                                        class="text-red-500 hover:text-red-700">
+                                                    ×
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <div x-show="!showOptionsManager" class="text-sm text-slate-500">
+                        <span x-text="Object.keys(workflow.options).length"></span> option<span x-show="Object.keys(workflow.options).length !== 1">s</span> defined
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toolbox - Available Tools -->
+            <div class="col-span-4">
+                <div class="toolbox sticky top-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold">Toolbox</h2>
+                        <button @click="showTemplates = true" 
+                                class="text-xs text-blue-600 hover:text-blue-800 font-semibold tooltip">
+                            âœ¨ Templates
+                            <span class="tooltip-text">Click to browse pre-built step templates</span>
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-4">Drag tools into your workflow</p>
+
+                    <div class="space-y-2">
+                        <!-- LLM Tools -->
+                        <div class="mb-4">
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">AI Processing</p>
+                            <div class="tool-item" draggable="true" data-tool="llm_prompt">
+                                <span class="text-2xl">🤖</span>
+                                <div class="flex-1">
+                                    <div class="font-semibold text-sm">LLM Prompt</div>
+                                    <div class="text-xs text-slate-500">Transform with AI</div>
+                                </div>
+                            </div>
+                            <div class="tool-item" draggable="true" data-tool="web_search">
+                                <span class="text-2xl">🔍</span>
+                                <div class="flex-1">
+                                    <div class="font-semibold text-sm">Web Search</div>
+                                    <div class="text-xs text-slate-500">Find information</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Tools -->
+                        <div class="mb-4">
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Analysis</p>
+                            <div class="tool-item" draggable="true" data-tool="fact_check">
+                                <span class="text-2xl">✅</span>
+                                <div class="flex-1">
+                                    <div class="font-semibold text-sm">Fact Check</div>
+                                    <div class="text-xs text-slate-500">Verify claims</div>
+                                </div>
+                            </div>
+                            <div class="tool-item" draggable="true" data-tool="data_validation">
+                                <span class="text-2xl">🔍¬</span>
+                                <div class="flex-1">
+                                    <div class="font-semibold text-sm">Data Validation</div>
+                                    <div class="text-xs text-slate-500">Check for errors</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Output Tools -->
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Output</p>
+                            <div class="tool-item" draggable="true" data-tool="podcast_generator">
+                                <span class="text-2xl">🎙️</span>
+                                <div class="flex-1">
+                                    <div class="font-semibold text-sm">Generate Podcast</div>
+                                    <div class="text-xs text-slate-500">Text to audio</div>
+                                </div>
+                            </div>
+                            <div class="tool-item" draggable="true" data-tool="alignment">
+                                <span class="text-2xl">🔍—</span>
+                                <div class="flex-1">
+                                    <div class="font-semibold text-sm">Align Excel</div>
+                                    <div class="text-xs text-slate-500">Match rows semantically</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- CANVAS VIEW (OpenAI Agent Builder Style) -->
+        <div x-show="canvasViewMode === 'visual'" class="visual-canvas-container">
+            <!-- Left Sidebar - Tool Palette -->
+            <div class="tool-palette">
+                <div class="tool-palette-section">
+                    <div class="tool-palette-header">Core</div>
+                    <div class="palette-tool" draggable="true" data-tool="llm_prompt">
+                        <div class="palette-tool-icon">🤖</div>
+                        <div class="palette-tool-label">Agent</div>
+                    </div>
+                    <div class="palette-tool" draggable="true" data-tool="note">
+                        <div class="palette-tool-icon">📝</div>
+                        <div class="palette-tool-label">Note</div>
+                    </div>
+    </div>
+
+                <div class="tool-palette-section">
+                    <div class="tool-palette-header">Tools</div>
+                    <div class="palette-tool" draggable="true" data-tool="web_search">
+                        <div class="palette-tool-icon">🔍</div>
+                        <div class="palette-tool-label">Search</div>
+                    </div>
+                    <div class="palette-tool" draggable="true" data-tool="fact_check">
+                        <div class="palette-tool-icon">✅</div>
+                        <div class="palette-tool-label">Fact check</div>
+                    </div>
+                </div>
+                
+                <div class="tool-palette-section">
+                    <div class="tool-palette-header">Output</div>
+                    <div class="palette-tool" draggable="true" data-tool="podcast_generator">
+                        <div class="palette-tool-icon">🎙️</div>
+                        <div class="palette-tool-label">Podcast</div>
+                    </div>
+                    <div class="palette-tool" draggable="true" data-tool="alignment">
+                        <div class="palette-tool-icon">🔗</div>
+                        <div class="palette-tool-label">Align</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Canvas Area -->
+            <div class="node-canvas" id="visual-canvas">
+                <div class="canvas-inner">
+                    <!-- Nodes will be rendered here by visual-canvas.js -->
+                    <div x-show="workflow.steps.length === 0" class="empty-state" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px;">
+                        <div class="empty-state-icon">
+                            🎯
+                        </div>
+                        <h3 class="text-lg font-semibold text-slate-700 mb-2">Start Building</h3>
+                        <p class="text-sm text-slate-500">
+                            Drag tools from the left sidebar and drop them on the canvas to create your workflow.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Canvas Controls -->
+                <div class="canvas-controls">
+                    <button class="canvas-control-btn" title="Zoom in" @click="zoomIn()">+</button>
+                    <button class="canvas-control-btn" title="Zoom out" @click="zoomOut()">-</button>
+                    <button class="canvas-control-btn" title="Fit to view" @click="fitToView()">⊡</button>
+                    <button class="canvas-control-btn" title="Auto-arrange" @click="autoArrange()">✨</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+    <!-- Template Picker Modal -->
+    <div x-show="showTemplates" 
+         x-cloak
+         @click.self="showTemplates = false"
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+         style="animation: fadeIn 200ms ease-out;">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+             @click.stop
+             style="animation: slideUp 300ms cubic-bezier(0.4, 0, 0.2, 1);">
+            
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-slate-200">
+                <div>
+                    <h2 class="text-xl font-semibold text-slate-900">Step Templates</h2>
+                    <p class="text-sm text-slate-500 mt-1">Choose a pre-configured step to add to your workflow</p>
+                </div>
+                <button @click="showTemplates = false" 
+                        class="text-slate-400 hover:text-slate-600 text-2xl leading-none">
+                    ×
+                </button>
+            </div>
+            
+            <!-- Search Bar -->
+            <div class="p-6 border-b border-slate-100">
+                <div class="relative">
+                    <input type="text" 
+                           x-model="templateSearch"
+                           @input="filterTemplates()"
+                           placeholder="Search templates..."
+                           class="w-full px-4 py-3 pl-10 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                    <span class="absolute left-3 top-3.5 text-slate-400">🔍</span>
+                </div>
+            </div>
+            
+            <!-- Template Grid -->
+            <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 240px);">
+                <div class="grid grid-cols-2 gap-3">
+                    <template x-for="template in filteredTemplates" :key="template.id">
+                        <button @click="insertTemplate(template)"
+                                class="text-left p-4 border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group">
+                            <div class="flex items-start gap-3">
+                                <div class="text-2xl flex-shrink-0" x-text="template.icon"></div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold text-slate-900 mb-1 group-hover:text-blue-700 transition-colors" 
+                                        x-text="template.name"></h3>
+                                    <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed" 
+                                       x-text="template.description"></p>
+                                    <div class="mt-2 flex items-center gap-2">
+                                        <span class="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-full font-medium"
+                                              x-text="template.category"></span>
+                                        <span class="text-xs text-slate-400" 
+                                              x-text="template.step.step_type.replace(/_/g, ' ')"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </button>
+                    </template>
+                </div>
+                
+                <!-- No Results State -->
+                <div x-show="filteredTemplates.length === 0" class="text-center py-12">
+                    <div class="text-5xl mb-3">🔍</div>
+                    <p class="text-slate-500 font-medium">No templates found</p>
+                    <p class="text-xs text-slate-400 mt-1">Try a different search term</p>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-200 bg-slate-50 flex justify-end">
+                <button @click="showTemplates = false" class="btn btn-ghost">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
