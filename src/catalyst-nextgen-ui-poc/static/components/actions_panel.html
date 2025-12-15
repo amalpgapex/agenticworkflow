@@ -1,0 +1,70 @@
+<div class="panel h-full flex flex-col overflow-hidden">
+    <!-- Collapsed State -->
+    <div x-show="rightPanelCollapsed" class="flex flex-col items-center py-8 cursor-pointer" @click="rightPanelCollapsed = false">
+        <div style="writing-mode: vertical-rl;" class="text-xs font-semibold text-slate-400">
+            Actions
+        </div>
+    </div>
+    
+    <!-- Expanded State -->
+    <div x-show="!rightPanelCollapsed" class="flex flex-col h-full">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xs font-bold uppercase text-slate-400">Actions</h3>
+            <button @click="rightPanelCollapsed = true" class="text-slate-400 hover:text-slate-600">
+                →
+            </button>
+        </div>
+        
+        <!-- Timeline -->
+        <div class="flex-1 overflow-y-auto pr-2" style="scrollbar-width: thin;">
+            <section x-show="steps.length" class="space-y-4">
+                <div class="timeline space-y-2">
+                    <template x-for="(step, idx) in steps" :key="`${step.name}-${idx}`">
+                        <div @click="viewStep(idx)"
+                             @keydown.enter.prevent="viewStep(idx)"
+                             @keydown.space.prevent="viewStep(idx)"
+                             role="button"
+                             tabindex="0"
+                             class="timeline-step w-full text-left cursor-pointer"
+                             :class="{
+                                'is-active': currentViewingStep === idx,
+                                'is-complete': step.status === 'completed'
+                             }">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="text-xs uppercase tracking-wide text-slate-400">Step <span x-text="idx + 1"></span></p>
+                                    <p class="text-sm font-semibold" x-text="step.name"></p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button x-show="!processing && step.status === 'completed' && allowRerunFrom(idx)"
+                                            @click.stop="rerunFromStep(idx)"
+                                            class="subtle-button text-xs border-slate-300 text-slate-700 hover:border-slate-400">
+                                        <span class="inline-flex items-center gap-1">
+                                            <span class="text-base">🔄</span>
+                                            <span>Replay</span>
+                                        </span>
+                                    </button>
+                                    <span class="inline-flex items-center gap-1 text-xs text-slate-500">
+                                        <span class="w-2 h-2 rounded-full" :class="{
+                                            'bg-emerald-500': step.status === 'completed',
+                                            'bg-amber-500 animate-pulse': step.status === 'processing',
+                                            'bg-slate-300': step.status !== 'completed' && step.status !== 'processing'
+                                        }"></span>
+                                        <span x-text="step.statusText"></span>
+                                    </span>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-2" x-show="currentStreamingStep === idx && processing">Live output…</p>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            <section x-show="!steps.length" class="text-slate-400 text-sm leading-relaxed">
+                Run a task to see each step appear here. You'll be able to jump to any step and fine-tune the results without ever leaving the canvas.
+            </section>
+        </div>
+    </div>
+</div>
+

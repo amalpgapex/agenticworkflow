@@ -1,0 +1,198 @@
+{
+  "canvas_types": {
+    "text_editor": {
+      "id": "text_editor",
+      "name": "Text Editor",
+      "description": "Rich text editor with formatting toolbar for document editing",
+      "supported_file_types": ["docx", "txt", "md"],
+      "capabilities": {
+        "editable": true,
+        "exportable": true,
+        "formatting": true,
+        "preview": true
+      },
+      "export_formats": ["docx", "txt", "md"],
+      "component": "wysiwyg-editor",
+      "icon": "📝"
+    },
+    "audio_player": {
+      "id": "audio_player",
+      "name": "Audio Player",
+      "description": "Audio player for podcast and audio content",
+      "supported_file_types": ["docx", "txt", "md", "mp3", "wav"],
+      "capabilities": {
+        "editable": false,
+        "exportable": true,
+        "formatting": false,
+        "preview": false,
+        "playback": true
+      },
+      "export_formats": ["mp3"],
+      "component": "audio-player",
+      "icon": "🎧"
+    },
+    "image_viewer": {
+      "id": "image_viewer",
+      "name": "Image Viewer",
+      "description": "Image viewer and editor for visual content",
+      "supported_file_types": ["png", "jpg", "jpeg", "gif", "webp"],
+      "capabilities": {
+        "editable": false,
+        "exportable": true,
+        "formatting": false,
+        "preview": true,
+        "zoom": true
+      },
+      "export_formats": ["png", "jpg"],
+      "component": "image-viewer",
+      "icon": "🖼️"
+    },
+    "pdf_viewer": {
+      "id": "pdf_viewer",
+      "name": "PDF Viewer",
+      "description": "PDF document viewer",
+      "supported_file_types": ["pdf"],
+      "capabilities": {
+        "editable": false,
+        "exportable": true,
+        "formatting": false,
+        "preview": true,
+        "pagination": true
+      },
+      "export_formats": ["pdf"],
+      "component": "pdf-viewer",
+      "icon": "📄"
+    },
+    "spreadsheet_viewer": {
+      "id": "spreadsheet_viewer",
+      "name": "Spreadsheet Viewer",
+      "description": "Spreadsheet and data table viewer",
+      "supported_file_types": ["xlsx", "csv"],
+      "capabilities": {
+        "editable": true,
+        "exportable": true,
+        "formatting": false,
+        "preview": true,
+        "sortable": true
+      },
+      "export_formats": ["xlsx", "csv"],
+      "component": "spreadsheet-viewer",
+      "icon": "📊"
+    },
+    "code_editor": {
+      "id": "code_editor",
+      "name": "Code Editor",
+      "description": "Syntax-highlighted code editor",
+      "supported_file_types": ["py", "js", "ts", "html", "css", "json", "yaml"],
+      "capabilities": {
+        "editable": true,
+        "exportable": true,
+        "formatting": true,
+        "preview": false,
+        "syntax_highlight": true
+      },
+      "export_formats": ["txt"],
+      "component": "code-editor",
+      "icon": "💻"
+    },
+    "video_player": {
+      "id": "video_player",
+      "name": "Video Player",
+      "description": "Video player for multimedia content",
+      "supported_file_types": ["mp4", "webm", "avi"],
+      "capabilities": {
+        "editable": false,
+        "exportable": true,
+        "formatting": false,
+        "preview": false,
+        "playback": true,
+        "controls": true
+      },
+      "export_formats": ["mp4"],
+      "component": "video-player",
+      "icon": "🎬"
+    },
+    "alignment_viewer": {
+      "id": "alignment_viewer",
+      "name": "Alignment Viewer",
+      "description": "View matched pairs and orphans from Excel or text alignment with optional diff highlighting",
+      "supported_file_types": ["xlsx", "xls", "docx", "txt", "md"],
+      "capabilities": {
+        "editable": false,
+        "exportable": true,
+        "formatting": false,
+        "preview": true,
+        "interactive": true,
+        "diff_highlighting": true
+      },
+      "export_formats": ["xlsx", "csv", "json"],
+      "component": "alignment-viewer",
+      "icon": "🔗"
+    },
+    "chat_interface": {
+      "id": "chat_interface",
+      "name": "Chat Interface",
+      "description": "Interactive chat interface for conversing with document content using RAG",
+      "supported_file_types": ["docx", "txt", "md", "pdf"],
+      "capabilities": {
+        "editable": false,
+        "exportable": true,
+        "formatting": false,
+        "preview": false,
+        "interactive": true,
+        "chat": true
+      },
+      "export_formats": ["txt", "md"],
+      "component": "chat-interface",
+      "icon": "💬"
+    },
+    "diff_viewer": {
+      "id": "diff_viewer",
+      "name": "Document Diff Viewer",
+      "description": "Advanced document comparison with redline/greenline display, structural analysis, and semantic diff",
+      "supported_file_types": ["docx", "pdf", "txt", "md"],
+      "capabilities": {
+        "editable": false,
+        "exportable": true,
+        "formatting": true,
+        "preview": true,
+        "interactive": true,
+        "split_pane": true,
+        "navigation": true,
+        "collapsible_sections": true,
+        "diff_highlighting": true,
+        "change_tracking": true
+      },
+      "export_formats": ["docx", "pdf", "json", "md", "html"],
+      "component": "diff-viewer",
+      "icon": "⚖️"
+    }
+  },
+  "file_type_mappings": {
+    "docx": "text_editor",
+    "txt": "text_editor",
+    "md": "text_editor",
+    "mp3": "audio_player",
+    "wav": "audio_player",
+    "png": "image_viewer",
+    "jpg": "image_viewer",
+    "jpeg": "image_viewer",
+    "gif": "image_viewer",
+    "webp": "image_viewer",
+    "pdf": "pdf_viewer",
+    "xlsx": "alignment_viewer",
+    "xls": "alignment_viewer",
+    "csv": "spreadsheet_viewer",
+    "py": "code_editor",
+    "js": "code_editor",
+    "ts": "code_editor",
+    "html": "code_editor",
+    "css": "code_editor",
+    "json": "code_editor",
+    "yaml": "code_editor",
+    "mp4": "video_player",
+    "webm": "video_player",
+    "avi": "video_player"
+  }
+}
+

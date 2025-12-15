@@ -1,0 +1,164 @@
+{
+  "templates": [
+    {
+      "id": "extract_key_points",
+      "name": "Extract Key Points",
+      "description": "Extract the main topics, themes, or key points from a document",
+      "icon": "🎯",
+      "category": "analysis",
+      "step": {
+        "step_name": "Extract Key Points",
+        "step_type": "llm_prompt",
+        "prompt": "Analyze the following document and extract the key points, main themes, and important takeaways.\n\nDocument:\n{document_content}\n\nProvide your response as a bulleted list in Markdown format."
+      }
+    },
+    {
+      "id": "summarize_concise",
+      "name": "Summarize (Concise)",
+      "description": "Create a brief, focused summary of the document",
+      "icon": "📝",
+      "category": "transformation",
+      "step": {
+        "step_name": "Create Summary",
+        "step_type": "llm_prompt",
+        "prompt": "Create a concise summary of the following document. Focus on the most important information and key takeaways. Keep it brief and clear.\n\nDocument:\n{document_content}\n\nSummary:"
+      }
+    },
+    {
+      "id": "generate_questions",
+      "name": "Generate Questions",
+      "description": "Generate thoughtful questions based on document content",
+      "icon": "❓",
+      "category": "analysis",
+      "step": {
+        "step_name": "Generate Questions",
+        "step_type": "llm_prompt",
+        "prompt": "Based on the following document, generate 8-12 insightful questions that would help someone understand the material better.\n\nDocument:\n{document_content}\n\nProvide the questions as a numbered list."
+      }
+    },
+    {
+      "id": "identify_action_items",
+      "name": "Identify Action Items",
+      "description": "Extract actionable tasks, recommendations, or next steps",
+      "icon": "✅",
+      "category": "analysis",
+      "step": {
+        "step_name": "Identify Action Items",
+        "step_type": "llm_prompt",
+        "prompt": "Review the following document and identify all action items, tasks, recommendations, or next steps.\n\nDocument:\n{document_content}\n\nProvide action items as a checklist in Markdown format with clear ownership and deadlines where mentioned."
+      }
+    },
+    {
+      "id": "expand_section",
+      "name": "Expand Content",
+      "description": "Add more detail, context, and explanation to content",
+      "icon": "➕",
+      "category": "transformation",
+      "step": {
+        "step_name": "Expand Content",
+        "step_type": "llm_prompt",
+        "prompt": "Expand the following content with additional details, context, examples, and explanations. Make it more comprehensive while maintaining clarity.\n\nOriginal Content:\n{previous_output}\n\nExpanded Content:"
+      }
+    },
+    {
+      "id": "rewrite_professional",
+      "name": "Rewrite (Professional Tone)",
+      "description": "Rewrite content in a formal, professional business tone",
+      "icon": "💼",
+      "category": "transformation",
+      "step": {
+        "step_name": "Rewrite Professionally",
+        "step_type": "llm_prompt",
+        "prompt": "Rewrite the following content using a professional, formal business tone. Maintain all key information while improving clarity and professionalism.\n\nOriginal:\n{document_content}\n\nProfessional Version:"
+      }
+    },
+    {
+      "id": "rewrite_casual",
+      "name": "Rewrite (Casual Tone)",
+      "description": "Rewrite content in a friendly, conversational tone",
+      "icon": "💬",
+      "category": "transformation",
+      "step": {
+        "step_name": "Rewrite Casually",
+        "step_type": "llm_prompt",
+        "prompt": "Rewrite the following content using a friendly, conversational tone. Keep it approachable and easy to understand while maintaining all key information.\n\nOriginal:\n{document_content}\n\nCasual Version:"
+      }
+    },
+    {
+      "id": "create_outline",
+      "name": "Create Outline",
+      "description": "Generate a structured outline from the document",
+      "icon": "📋",
+      "category": "analysis",
+      "step": {
+        "step_name": "Create Outline",
+        "step_type": "llm_prompt",
+        "prompt": "Create a clear, hierarchical outline of the following document. Use proper heading levels and capture the main structure and flow.\n\nDocument:\n{document_content}\n\nOutline (use Markdown headings):"
+      }
+    },
+    {
+      "id": "extract_data",
+      "name": "Extract Structured Data",
+      "description": "Pull out specific data points (dates, numbers, names, etc.)",
+      "icon": "🔍",
+      "category": "analysis",
+      "step": {
+        "step_name": "Extract Data",
+        "step_type": "llm_prompt",
+        "prompt": "Extract all structured data from the following document including:\n- Dates\n- Numbers and statistics\n- Names (people, organizations)\n- Locations\n- Key terms and definitions\n\nDocument:\n{document_content}\n\nPresent the extracted data in a structured format (tables or lists)."
+      }
+    },
+    {
+      "id": "compare_perspectives",
+      "name": "Analyze Different Perspectives",
+      "description": "Identify and analyze different viewpoints in the content",
+      "icon": "🔀",
+      "category": "analysis",
+      "step": {
+        "step_name": "Analyze Perspectives",
+        "step_type": "llm_prompt",
+        "prompt": "Identify different perspectives, viewpoints, or arguments presented in the following document. Analyze each perspective fairly and note areas of agreement or disagreement.\n\nDocument:\n{document_content}\n\nPerspective Analysis:"
+      }
+    },
+    {
+      "id": "web_research",
+      "name": "Web Research",
+      "description": "Search the web for related information",
+      "icon": "🌐",
+      "category": "enrichment",
+      "step": {
+        "step_name": "Web Research",
+        "step_type": "web_search",
+        "parameters": {
+          "search_query": "{topic}"
+        }
+      }
+    },
+    {
+      "id": "add_examples",
+      "name": "Add Examples",
+      "description": "Enhance content with relevant examples and illustrations",
+      "icon": "💡",
+      "category": "enrichment",
+      "step": {
+        "step_name": "Add Examples",
+        "step_type": "llm_prompt",
+        "prompt": "Enhance the following content by adding relevant examples, case studies, or illustrations that help clarify the concepts.\n\nOriginal Content:\n{previous_output}\n\nEnhanced with Examples:"
+      }
+    },
+    {
+      "id": "format_bullets",
+      "name": "Format as Bullet Points",
+      "description": "Convert content into scannable bullet point format",
+      "icon": "• ",
+      "category": "transformation",
+      "step": {
+        "step_name": "Format as Bullets",
+        "step_type": "llm_prompt",
+        "prompt": "Convert the following content into clear, scannable bullet points. Organize by topic and maintain all key information.\n\nOriginal:\n{previous_output}\n\nBullet Point Format:"
+      }
+    }
+  ]
+}
+
+

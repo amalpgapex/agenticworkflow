@@ -1,0 +1,1283 @@
+:root {
+    --ink-bg: #f8fafc;
+    --ink-surface: #ffffff;
+    --ink-surface-muted: #f1f5f9;
+    --ink-border: #e2e8f0;
+    --ink-border-strong: #cbd5f5;
+    --ink-text: #0f172a;
+    --ink-muted: #64748b;
+    --ink-accent: #2563eb;
+    --ink-accent-soft: #dbeafe;
+    --ink-success: #047857;
+}
+
+body {
+    font-family: "SF Pro Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--ink-bg);
+    color: var(--ink-text);
+}
+
+        .panel {
+            background: var(--ink-surface);
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid var(--ink-border);
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                        min-width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                        flex-grow 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                        flex-shrink 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                        box-shadow 0.3s ease,
+                        transform 0.3s ease;
+            will-change: width, min-width, flex-grow;
+        }
+        
+        .panel:hover {
+            box-shadow: 0 4px 6px rgba(15, 23, 42, 0.1);
+        }
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+}
+
+.panel-title {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--ink-muted);
+}
+
+.section-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+    margin-bottom: 0.5rem;
+}
+
+.input-card {
+    background: var(--ink-surface-muted);
+    border-radius: 8px;
+    border: 1px solid var(--ink-border);
+    padding: 0.875rem;
+}
+
+.section-divider {
+    border: 0;
+    height: 1px;
+    background: var(--ink-border);
+    margin: 1.5rem 0;
+}
+
+.primary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: var(--ink-text);
+    color: white;
+    padding: 0.65rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.15s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.primary-button:hover:not(:disabled) {
+    background: #111827;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+}
+
+.primary-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.subtle-button {
+    border: 1px solid var(--ink-border);
+    border-radius: 9999px;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+    background: transparent;
+    transition: border 0.18s ease, color 0.18s ease;
+}
+
+.subtle-button:hover {
+    border-color: var(--ink-accent);
+    color: var(--ink-accent);
+}
+
+/* Simple markdown preview */
+.markdown-content {
+    font-family: "SF Pro Text", "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--ink-text);
+}
+.markdown-content h1 { font-size: 2.25rem; font-weight: 700; margin: 1em 0 0.6em; }
+.markdown-content h2 { font-size: 1.75rem; font-weight: 600; margin: 0.9em 0 0.5em; }
+.markdown-content h3 { font-size: 1.35rem; font-weight: 600; margin: 0.8em 0 0.45em; }
+.markdown-content p { margin: 1em 0; }
+.markdown-content ul, .markdown-content ol { margin: 1em 0; padding-left: 1.5em; }
+.markdown-content li { margin: 0.4em 0; }
+.markdown-content code { background: #0f172a0f; padding: 0.25em 0.5em; border-radius: 6px; font-size: 0.9em; }
+.markdown-content pre { background: #0f172a0f; padding: 1.2em; border-radius: 12px; overflow-x: auto; margin: 1em 0; }
+.markdown-content pre code { background: none; padding: 0; }
+.markdown-content blockquote { border-left: 4px solid var(--ink-border); padding-left: 1.2em; margin: 1.2em 0; color: var(--ink-muted); }
+.markdown-content strong { font-weight: 700; }
+.markdown-content em { font-style: italic; }
+.markdown-content a { color: var(--ink-accent); text-decoration: underline; }
+
+/* Editable styled content */
+.wysiwyg-editor {
+    width: 100%;
+    min-height: 420px;
+    max-height: 640px;
+    overflow-y: auto;
+    padding: 1.75rem;
+    border: 1px solid var(--ink-border);
+    background: var(--ink-surface);
+    border-radius: 0 0 16px 16px;
+}
+.wysiwyg-editor:focus {
+    outline: none;
+    border-color: var(--ink-accent);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+.wysiwyg-editor:empty:before {
+    content: attr(placeholder);
+    color: var(--ink-muted);
+    font-style: italic;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.timeline::before {
+    content: "";
+    position: absolute;
+    left: 0.55rem;
+    top: 0.25rem;
+    bottom: 0.25rem;
+    width: 2px;
+    background: linear-gradient(180deg, rgba(37, 99, 235, 0.18), rgba(37, 99, 235, 0.05));
+}
+
+.timeline-step {
+    position: relative;
+    border-radius: 12px;
+    padding: 0.85rem 1rem 0.85rem 1.25rem;
+    border: 1px solid transparent;
+    transition: border 0.18s ease, background 0.18s ease, transform 0.18s ease;
+    text-align: left;
+}
+
+.timeline-step:hover {
+    border-color: var(--ink-border);
+    background: var(--ink-surface-muted);
+    transform: translateX(2px);
+}
+
+.timeline-step.is-active {
+    border-color: var(--ink-accent);
+    background: var(--ink-accent-soft);
+}
+
+.timeline-step::before {
+    content: "";
+    position: absolute;
+    left: -0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 9999px;
+    background: var(--ink-muted);
+    border: 2px solid var(--ink-surface);
+    box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.45);
+}
+
+.timeline-step.is-active::before {
+    background: var(--ink-accent);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+.timeline-step.is-complete::before {
+    background: var(--ink-success);
+}
+
+
+/* Panel collapse/expand transitions - smooth animated width changes */
+
+/* Smooth content transitions when panels expand/collapse */
+/* Panel collapse/expand transitions - smooth animated content */
+.panel section,
+.panel .panel-header,
+.panel > div > section,
+.panel > div > div:not(.panel-header) {
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Add subtle animation when content appears/disappears */
+[x-show] {
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+/* Stagger animation for panel content */
+.panel > div > div:nth-child(1) {
+    transition-delay: 0ms;
+}
+.panel > div > div:nth-child(2) {
+    transition-delay: 50ms;
+}
+.panel > div > div:nth-child(3) {
+    transition-delay: 100ms;
+}
+
+.panel-collapsed-icon {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+}
+
+kbd {
+    font-family: ui-monospace, monospace;
+    font-size: 0.75rem;
+}
+
+/* ============================================
+   DOCUMENT COMPARISON VIEWER (Word/PDF Style)
+   ============================================ */
+
+/* Main Document Container */
+.diff-document-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Document Header */
+.diff-document-header {
+    padding: 20px 24px;
+    border-bottom: 2px solid #e5e7eb;
+    background: #f9fafb;
+    border-radius: 12px 12px 0 0;
+}
+
+.diff-document-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
+}
+
+.diff-document-subtitle {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* Document Stats Bar */
+.diff-stats-bar {
+    display: flex;
+    gap: 32px;
+    padding: 16px 24px;
+    background: #fefce8;
+    border-bottom: 1px solid #fde68a;
+}
+
+.diff-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #374151;
+}
+
+.diff-stat-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 0 6px;
+}
+
+.diff-stat-badge.deletions {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.diff-stat-badge.insertions {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.diff-stat-badge.changes {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+/* Document Body with Change Bars */
+.diff-document-body {
+    padding: 32px;
+    font-family: "SF Pro Text", Georgia, "Times New Roman", serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #1f2937;
+    position: relative;
+}
+
+/* Change Bar in Margin (like Word) */
+.diff-change-indicator {
+    position: absolute;
+    left: 12px;
+    width: 4px;
+    background: #3b82f6;
+    border-radius: 2px;
+}
+
+/* Deletions (strikethrough, red) */
+.diff-deleted {
+    color: #dc2626;
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+    background: #fee2e2;
+    padding: 2px 4px;
+    border-radius: 3px;
+    margin: 0 1px;
+}
+
+/* Insertions (underline, green) */
+.diff-inserted {
+    color: #059669;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-decoration-color: #10b981;
+    background: #d1fae5;
+    padding: 2px 4px;
+    border-radius: 3px;
+    margin: 0 1px;
+    font-weight: 500;
+}
+
+/* Paragraphs with changes */
+.diff-paragraph-changed {
+    position: relative;
+    padding-left: 24px;
+    margin-bottom: 16px;
+}
+
+.diff-paragraph-changed::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 4px;
+    bottom: 4px;
+    width: 4px;
+    background: #3b82f6;
+    border-radius: 2px;
+}
+
+/* Unchanged paragraphs */
+.diff-paragraph-unchanged {
+    margin-bottom: 16px;
+    color: #6b7280;
+}
+
+/* View Mode Toggle */
+.diff-view-toggle {
+    display: flex;
+    gap: 8px;
+    padding: 16px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    background: white;
+}
+
+.diff-toggle-button {
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: white;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.diff-toggle-button:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.diff-toggle-button.active {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
+}
+
+/* Legend */
+.diff-legend {
+    display: flex;
+    gap: 24px;
+    padding: 12px 24px;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    font-size: 12px;
+    color: #6b7280;
+    border-radius: 0 0 12px 12px;
+}
+
+.diff-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.diff-legend-sample {
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+}
+
+.diff-legend-sample.deleted {
+    color: #dc2626;
+    text-decoration: line-through;
+    background: #fee2e2;
+}
+
+.diff-legend-sample.inserted {
+    color: #059669;
+    text-decoration: underline;
+    background: #d1fae5;
+}
+
+/* Old diff styles - kept for backward compatibility */
+.diff-content .diff-removed {
+    background-color: #fee2e2;
+    color: #991b1b;
+    text-decoration: line-through;
+    padding: 0.125rem 0.25rem;
+    border-radius: 3px;
+    margin: 0 1px;
+}
+
+.diff-content .diff-added {
+    background-color: #dcfce7;
+    color: #166534;
+    font-weight: 500;
+    padding: 0.125rem 0.25rem;
+    border-radius: 3px;
+    margin: 0 1px;
+}
+
+.diff-content {
+    word-wrap: break-word;
+    line-height: 1.8;
+}
+
+/* Relationship Viewer Styles - Compact, Elegant, Laptop-Optimized */
+.relationship-viewer-container {
+    background: #ffffff;
+}
+
+.relationship-node {
+    position: relative;
+    will-change: transform;
+    transform-origin: center;
+}
+
+.relationship-node::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 0.5rem;
+    background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.08), transparent 70%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.relationship-node:hover::before {
+    opacity: 1;
+}
+
+/* Side panel scrollbar styling - elegant thin scrollbars for 17" screens */
+.panel section::-webkit-scrollbar,
+.panel .overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+
+.panel section::-webkit-scrollbar-track,
+.panel .overflow-y-auto::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 8px 0;
+}
+
+.panel section::-webkit-scrollbar-thumb,
+.panel .overflow-y-auto::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 3px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.panel section::-webkit-scrollbar-thumb:hover,
+.panel .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.5);
+    border-radius: 3px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+/* Compact scrollbar styling for relationship viewer */
+#left-scroll-container::-webkit-scrollbar,
+#right-scroll-container::-webkit-scrollbar,
+.relationship-viewer-container *::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+#left-scroll-container::-webkit-scrollbar-track,
+#right-scroll-container::-webkit-scrollbar-track,
+.relationship-viewer-container *::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#left-scroll-container::-webkit-scrollbar-thumb,
+#right-scroll-container::-webkit-scrollbar-thumb,
+.relationship-viewer-container *::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.2);
+    border-radius: 2px;
+}
+
+#left-scroll-container::-webkit-scrollbar-thumb:hover,
+#right-scroll-container::-webkit-scrollbar-thumb:hover,
+.relationship-viewer-container *::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.4);
+}
+
+/* Smooth scroll behavior */
+#left-scroll-container,
+#right-scroll-container,
+.panel section,
+.panel .overflow-y-auto {
+    scroll-behavior: smooth;
+}
+
+/* Text truncation for compact cards */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Alignment editing styles */
+.alignment-viewer-container table tbody tr {
+    position: relative;
+}
+
+.alignment-viewer-container .group:hover {
+    background-color: rgba(59, 130, 246, 0.04) !important;
+}
+
+/* ============================================
+   RICH OPTION TYPES - Phase 1 Design System
+   ============================================ */
+
+/* Base Option Field Styling */
+.option-field {
+    margin-bottom: 24px;
+    transition: transform 150ms ease-out;
+}
+
+.option-field:hover {
+    transform: translateX(2px);
+}
+
+/* Number Input with Range Indicator */
+.option-field input[type="number"] {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    transition: all 150ms ease-out;
+}
+
+.option-field input[type="number"]:hover {
+    border-color: #3b82f6;
+}
+
+.option-field input[type="number"]:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Range Indicator Animation */
+.option-field .h-1.bg-blue-500 {
+    transition: width 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Checkbox Custom Styling */
+.option-field input[type="checkbox"] {
+    transition: all 150ms ease-out;
+    cursor: pointer;
+}
+
+.option-field input[type="checkbox"]:hover {
+    transform: scale(1.1);
+}
+
+.option-field input[type="checkbox"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.option-field input[type="checkbox"]:checked {
+    animation: checkBounce 200ms ease-out;
+}
+
+@keyframes checkBounce {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+/* Text Input */
+.option-field input[type="text"] {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    transition: all 150ms ease-out;
+}
+
+.option-field input[type="text"]:hover {
+    border-color: #3b82f6;
+}
+
+.option-field input[type="text"]:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Textarea */
+.option-field textarea {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    transition: all 150ms ease-out;
+    font-family: inherit;
+}
+
+.option-field textarea:hover {
+    border-color: #3b82f6;
+}
+
+.option-field textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Select/Dropdown */
+.option-field select {
+    transition: all 150ms ease-out;
+}
+
+.option-field select:hover {
+    border-color: #3b82f6;
+}
+
+/* Typography - As per design spec */
+.option-field label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+}
+
+.option-field .text-xs {
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.option-field input::placeholder,
+.option-field textarea::placeholder {
+    color: #9ca3af;
+    opacity: 1;
+}
+
+/* Error State with Shake Animation */
+.option-field.error input,
+.option-field.error textarea,
+.option-field.error select {
+    border-color: #ef4444;
+    animation: shake 300ms ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+
+/* Success State */
+.option-field.success input,
+.option-field.success textarea,
+.option-field.success select {
+    border-color: #10b981;
+}
+
+.option-field.success::after {
+    content: '✓';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #10b981;
+    font-weight: bold;
+}
+
+/* Focus Ring Styling - 2px blue ring as per spec */
+.option-field input:focus-visible,
+.option-field textarea:focus-visible,
+.option-field select:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* Disabled State - As per spec */
+.option-field input:disabled,
+.option-field textarea:disabled,
+.option-field select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
+/* Character Counter Styling */
+.option-field .text-xs.text-right {
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', monospace;
+}
+
+/* Smooth Grid Layout */
+.option-field .grid {
+    gap: 16px;
+}
+
+/* Label with Icon */
+.option-field label .text-xs.opacity-60 {
+    transition: opacity 200ms ease-out;
+}
+
+.option-field:hover label .text-xs.opacity-60 {
+    opacity: 1;
+}
+
+/* Checkbox Label Container */
+.option-field label.flex.items-center {
+    transition: all 150ms ease-out;
+}
+
+.option-field label.flex.items-center:hover {
+    background-color: #f9fafb;
+}
+
+/* Range Indicator Container */
+.option-field .flex.items-center.gap-2.text-xs {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Number input spinner buttons (webkit) */
+.option-field input[type="number"]::-webkit-inner-spin-button,
+.option-field input[type="number"]::-webkit-outer-spin-button {
+    opacity: 0.7;
+    transition: opacity 150ms ease-out;
+}
+
+.option-field input[type="number"]:hover::-webkit-inner-spin-button,
+.option-field input[type="number"]:hover::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+/* Responsive spacing adjustments */
+@media (max-width: 768px) {
+    .option-field {
+        margin-bottom: 16px;
+    }
+    
+    .option-field input,
+    .option-field textarea,
+    .option-field select {
+        padding: 10px 14px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}
+
+/* Micro-interaction: Subtle pulse on focus */
+.option-field input:focus,
+.option-field textarea:focus,
+.option-field select:focus {
+    animation: subtlePulse 1s ease-in-out infinite;
+}
+
+@keyframes subtlePulse {
+    0%, 100% {
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+    50% {
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+    }
+}
+
+/* Loading State */
+.option-field.loading::after {
+    content: '';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 600ms linear infinite;
+}
+
+@keyframes spin {
+    to { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* ============================================
+   LANDING PAGE STYLES
+   ============================================ */
+
+.landing-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 32px;
+    opacity: 1;
+    transition: opacity 0.4s ease-out;
+}
+
+.landing-search {
+    width: 100%;
+    height: 60px;
+    font-size: 18px;
+    border-radius: 16px;
+    padding: 0 24px;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    background: white;
+}
+
+.landing-search:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-color: #3b82f6;
+}
+
+.task-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+    margin-top: 40px;
+}
+
+.task-tile {
+    background: white;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.task-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    border-color: #cbd5e1;
+}
+
+.task-tile:active {
+    transform: translateY(0);
+}
+
+/* Responsive grid adjustments */
+@media (min-width: 1200px) {
+    .task-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .landing-container {
+        padding: 40px 16px;
+    }
+    
+    .landing-search {
+        height: 48px;
+        font-size: 16px;
+    }
+    
+    .task-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        margin-top: 32px;
+    }
+    
+    .task-tile {
+        padding: 20px;
+    }
+}
+
+/* Modal overlay z-index fix */
+.fixed.z-50 {
+    z-index: 9999;
+}
+
+/* ============================================
+   DIFF VIEWER STYLES
+   ============================================ */
+
+/* Diff Content - Unified View */
+.diff-content {
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.diff-line {
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin: 1px 0;
+}
+
+/* Word-level diff highlighting */
+.diff-removed {
+    background-color: #fecaca;
+    color: #991b1b;
+    text-decoration: line-through;
+    padding: 1px 3px;
+    border-radius: 2px;
+    margin: 0 1px;
+    font-weight: 500;
+}
+
+.diff-added {
+    background-color: #a7f3d0;
+    color: #065f46;
+    padding: 1px 3px;
+    border-radius: 2px;
+    margin: 0 1px;
+    font-weight: 500;
+}
+
+.diff-unchanged {
+    color: #475569;
+}
+
+/* Enhanced diff (from EnhancedDiffTool) */
+.enhanced-diff {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.enhanced-diff .diff-line {
+    padding: 4px 12px;
+    transition: background-color 0.2s ease;
+}
+
+.enhanced-diff .diff-line:hover {
+    background-color: #f1f5f9;
+}
+
+/* Context highlighting on hover */
+.diff-removed:hover,
+.diff-added:hover {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    z-index: 10;
+    position: relative;
+}
+
+/* Redline diff (from RedlineDiffTool) */
+.redline-diff {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    line-height: 1.8;
+}
+
+/* Diff statistics badge */
+.diff-stats {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.diff-stats .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.diff-stats .stat-item .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.diff-stats .stat-item .dot.added {
+    background-color: #10b981;
+}
+
+.diff-stats .stat-item .dot.removed {
+    background-color: #ef4444;
+}
+
+.diff-stats .stat-item .dot.modified {
+    background-color: #f59e0b;
+}
+
+/* Navigation controls */
+.diff-navigation {
+    position: sticky;
+    top: 0;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 16px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.diff-jump-button {
+    padding: 6px 12px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    color: #1e40af;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.diff-jump-button:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+
+.diff-jump-button:active {
+    transform: scale(0.95);
+}
+
+/* Change annotations */
+.change-annotation {
+    position: absolute;
+    right: -40px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.change-annotation.addition {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.change-annotation.deletion {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.change-annotation.modification {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Collapsible sections */
+.diff-section {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+.diff-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #f8fafc;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.diff-section-header:hover {
+    background: #f1f5f9;
+}
+
+.diff-section-header .title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #0f172a;
+}
+
+.diff-section-header .chevron {
+    transition: transform 0.3s ease;
+}
+
+.diff-section.expanded .chevron {
+    transform: rotate(180deg);
+}
+
+.diff-section-content {
+    padding: 16px;
+    background: white;
+}
+
+/* Split view enhancements */
+.split-view-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    height: 100%;
+}
+
+.split-pane {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.split-pane-header {
+    font-weight: 600;
+    font-size: 13px;
+    color: #374151;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.split-pane-header .doc-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.split-pane-header .doc-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.split-pane-header .doc-icon.doc1 {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.split-pane-header .doc-icon.doc2 {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+/* Responsive layout */
+@media (max-width: 768px) {
+    .split-view-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .diff-navigation {
+        flex-wrap: wrap;
+    }
+    
+    .change-annotation {
+        position: static;
+        display: inline-block;
+        margin-left: 8px;
+        transform: none;
+    }
+}
+
+/* Smooth scrolling for jump navigation */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Highlight on jump */
+@keyframes highlight-flash {
+    0% {
+        background-color: #fef3c7;
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.diff-line.jump-target {
+    animation: highlight-flash 1.5s ease;
+}
+
+/* Print styles */
+@media print {
+    .diff-navigation,
+    .diff-section-header .chevron {
+        display: none;
+    }
+    
+    .diff-section {
+        border: none;
+        page-break-inside: avoid;
+    }
+    
+    .diff-section-content {
+        display: block !important;
+    }
+}
+

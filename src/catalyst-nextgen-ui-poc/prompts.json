@@ -1,0 +1,456 @@
+{
+  "chat_with_documents": {
+    "name": "Chat with my documents",
+    "description": "Interactive chat with your documents using RAG (Retrieval Augmented Generation). Upload multiple documents and ask questions.",
+    "icon": "💬",
+    "canvas_type": "chat_interface",
+    "input_file_types": [
+      "docx",
+      "txt",
+      "md",
+      "pdf"
+    ],
+    "category": "ask",
+    "allow_multiple_files": true,
+    "steps": [
+      {
+        "step_name": "Initialize RAG",
+        "step_type": "rag_setup",
+        "prompt": "Setting up document knowledge base for chat..."
+      }
+    ]
+  },
+  "investigate_relationships": {
+    "name": "Investigate relationships",
+    "description": "Placeholder workflow for investigating relationships in content.",
+    "icon": "🧩",
+    "canvas_type": "text_editor",
+    "input_file_types": [
+      "docx",
+      "txt",
+      "md",
+      "pdf"
+    ],
+    "category": "analyze",
+    "steps": [
+      {
+        "step_name": "Outline Investigation",
+        "step_type": "llm_prompt",
+        "prompt": "Placeholder workflow for investigating relationships. Outline the investigation steps using the provided document.\n\nDocument:\n{document_content}\n\nInvestigation Outline:"
+      }
+    ]
+  },
+  "investigate_activations": {
+    "name": "Investigate activations",
+    "description": "Placeholder workflow for investigating activations in content.",
+    "icon": "⚡",
+    "canvas_type": "text_editor",
+    "input_file_types": [
+      "docx",
+      "txt",
+      "md",
+      "pdf"
+    ],
+    "category": "analyze",
+    "steps": [
+      {
+        "step_name": "Outline Investigation",
+        "step_type": "llm_prompt",
+        "prompt": "Placeholder workflow for investigating activations. Outline the investigation steps using the provided document.\n\nDocument:\n{document_content}\n\nInvestigation Outline:"
+      }
+    ]
+  },
+  "compare_documents": {
+    "name": "Compare two generic documents",
+    "description": "Comprehensive document comparison with intelligent chunking, visual diff, structural analysis, semantic matching, and detailed AI-powered change analysis. Handles documents from 1-1000 pages.",
+    "icon": "⚖️",
+    "canvas_type": "diff_viewer",
+    "input_file_types": [
+      "docx",
+      "txt",
+      "md",
+      "pdf"
+    ],
+    "category": "compare",
+    "requires_dual_upload": true,
+    "steps": [
+      {
+        "step_name": "Extract & Chunk Documents",
+        "step_type": "smart_chunker",
+        "description": "Intelligently segment documents based on structure and size, generate embeddings for semantic matching"
+      },
+      {
+        "step_name": "Generate Visual Diff",
+        "step_type": "enhanced_diff",
+        "description": "Create word-level redline/greenline comparison with statistics and change tracking"
+      },
+      {
+        "step_name": "Structural Analysis",
+        "step_type": "structural_analysis",
+        "description": "Compare document outlines, heading hierarchies, and detect reorganization"
+      },
+      {
+        "step_name": "Semantic Analysis",
+        "step_type": "semantic_diff",
+        "description": "Find semantically matched chunks, detect moved/paraphrased content, identify truly new/removed sections"
+      },
+      {
+        "step_name": "Extract Statistics Summary",
+        "step_type": "comparison_summary",
+        "description": "Extract key statistics from all previous analysis steps for efficient LLM processing"
+      },
+      {
+        "step_name": "Content Change Analysis",
+        "step_type": "llm_prompt",
+        "prompt": "You are performing a comprehensive content change analysis between two documents.\n\n### Document Comparison Statistics\n\n{previous_output}\n\n### Your Task\n\nBased on the available analysis, categorize and explain the changes:\n\n1. **Factual Updates** - Changed data, numbers, dates, names\n2. **Policy Changes** - Modified requirements, rules, procedures\n3. **Clarifications** - Reworded for clarity without changing meaning\n4. **Additions** - New sections, paragraphs, or concepts introduced\n5. **Removals** - Content deleted from the first document\n6. **Structural Changes** - Reorganizations, reorderings, heading changes\n7. **Semantic Shifts** - Paraphrased content or meaning changes\n\n### Required Output Format\n\nProvide a structured analysis with these sections:\n\n#### Executive Summary\n- Brief overview of the nature and scale of changes (2-3 sentences)\n- Overall assessment: Minor edits, Moderate revision, Major overhaul, or Complete rewrite\n\n#### Change Breakdown by Category\nFor each category above (that has changes):\n- **Category Name** (e.g., Factual Updates)\n  - Number of changes detected\n  - Key patterns observed\n  - Impact assessment (High/Medium/Low)\n\n#### Key Insights\n- Most significant types of changes\n- Areas of greatest modification\n- Consistency of changes (systematic vs. scattered)\n\n#### Impact Assessment\n- What are the implications of these changes?\n- Who would be affected?\n- What actions might be required?\n\n#### Summary Statistics\nBased on the previous steps:\n- Estimated change volume\n- Change distribution across document\n- Overall similarity assessment\n\nProvide your analysis in clear Markdown format."
+      },
+      {
+        "step_name": "Synthesis Report",
+        "step_type": "llm_prompt",
+        "prompt": "Create a comprehensive, executive-ready comparison report synthesizing the analysis.\n\n### Analysis Summary\n\nYou have access to the Content Change Analysis from the previous step:\n\n{previous_output}\n\n### Your Task\n\nCreate a final synthesis report that presents the findings in an executive-ready format.\n\n### Required Structure\n\n# Document Comparison Report\n\n## Overview\n- Comparison Date: [current date]\n- Analysis Method: Multi-level (Visual, Structural, Semantic, Content)\n- Document Scope: [estimate based on analysis]\n\n## Executive Summary\n[2-3 paragraph high-level overview of changes - suitable for executives who won't read the full report]\n\n## Key Findings\n[Present the most critical insights from the analysis]\n\n### Change Categorization\n[Organize changes by type: Factual Updates, Policy Changes, Clarifications, Additions, Removals, Structural Changes, Semantic Shifts]\n\n### Impact Analysis\n[What do these changes mean? Who is affected? What actions are needed?]\n\n## Change Statistics Summary\n[Present statistics in clear, visual format - use tables where appropriate]\n\n## Detailed Breakdown\n[More detailed analysis organized by importance and category]\n\n## Recommendations\n\n### For Reviewers\n- Focus areas for review\n- Critical changes requiring attention\n- Validation checkpoints\n\n### For Implementers\n- Action items based on changes\n- Priority sequence\n- Dependencies to consider\n\n### For Stakeholders\n- Who needs to be informed\n- Communication priorities\n- Approval requirements\n\n## Conclusion\n[Final assessment and next steps]\n\n---\n\nProvide the complete synthesis report in well-formatted Markdown with clear headings and professional presentation."
+      }
+    ]
+  },
+  "align_excel": {
+    "name": "Align paras (best pairs) and compare",
+    "description": "Semantically align rows from two Excel files using AI embeddings and Hungarian algorithm, then optionally generate AI-powered comparison analysis.",
+    "icon": "🔗",
+    "canvas_type": "alignment_viewer",
+    "input_file_types": [
+      "xlsx",
+      "xls"
+    ],
+    "category": "compare",
+    "requires_dual_upload": true,
+    "options": {
+      "column1": {
+        "label": "Column from File 1",
+        "description": "Select which column to align from the first Excel file",
+        "default": "0",
+        "choices": []
+      },
+      "column2": {
+        "label": "Column from File 2",
+        "description": "Select which column to align from the second Excel file",
+        "default": "0",
+        "choices": []
+      },
+      "include_diff": {
+        "label": "Include Diff Highlighting",
+        "description": "Show word-level differences between matched pairs",
+        "default": "no",
+        "choices": [
+          {
+            "value": "yes",
+            "label": "Yes - Show diffs"
+          },
+          {
+            "value": "no",
+            "label": "No - Just alignment"
+          }
+        ]
+      }
+    },
+    "steps": [
+      {
+        "step_name": "Align Excel Files",
+        "step_type": "alignment",
+        "description": "Use OpenAI embeddings and Hungarian algorithm to find optimal matches"
+      },
+      {
+        "step_name": "Analyze Differences",
+        "step_type": "compare_analysis",
+        "description": "Generate AI-powered natural language descriptions of key differences for each matched pair"
+      }
+    ]
+  },
+  "nearest_neighbor_compare": {
+    "name": "Find top n most similar and compare",
+    "description": "Placeholder workflow for nearest neighbor comparison.",
+    "icon": "🧭",
+    "canvas_type": "text_editor",
+    "input_file_types": [
+      "docx",
+      "txt",
+      "md",
+      "pdf"
+    ],
+    "category": "compare",
+    "requires_dual_upload": true,
+    "steps": [
+      {
+        "step_name": "Prepare Documents",
+        "step_type": "llm_prompt",
+        "prompt": "Placeholder for nearest neighbor comparison workflow. This step will be defined later.\n\nFile 1:\n{document_content}\n\nFile 2:\n{secondary_document_content}\n\nDescribe how to identify and compare the top N similar sections."
+      }
+    ]
+  },
+  "generate_podcast": {
+    "name": "Generate podcast",
+    "description": "Converts document into an engaging podcast script and generates audio.",
+    "icon": "🎙️",
+    "canvas_type": "audio_player",
+    "input_file_types": [
+      "docx",
+      "txt",
+      "md",
+      "pdf"
+    ],
+    "category": "create",
+    "steps": [
+      {
+        "step_name": "Create Podcast Script",
+        "step_type": "llm_prompt",
+        "prompt": "Transform the following document into an engaging podcast script. Make it conversational, natural, and easy to listen to. Include:\n- A compelling introduction\n- Clear sections with smooth transitions\n- Engaging storytelling style\n- A strong conclusion\n\nKeep the script under 4000 characters for audio generation.\n\nDocument:\n{document_content}\n\nProvide ONLY the podcast script (no meta-commentary or formatting instructions):\n\nPodcast Script:"
+      },
+      {
+        "step_name": "Generate Audio",
+        "step_type": "podcast_generator",
+        "parameters": {
+          "voice": "alloy"
+        }
+      }
+    ]
+  },
+  "draft_checklist_questions": {
+    "name": "Draft checklist questions from accounting requirements",
+    "description": "Placeholder workflow for drafting checklist questions from accounting requirements.",
+    "icon": "☑️",
+    "canvas_type": "text_editor",
+    "input_file_types": [
+      "docx",
+      "txt",
+      "md",
+      "pdf"
+    ],
+    "category": "create",
+    "steps": [
+      {
+        "step_name": "Draft Plan",
+        "step_type": "llm_prompt",
+        "prompt": "Placeholder for Draft checklist questions from accounting requirements. Outline the structure and requirements for this workflow based on the document.\n\nDocument:\n{document_content}\n\nOutline:"
+      }
+    ]
+  },
+  "draft_omnia_procedures": {
+    "name": "Draft Omnia procedures from AAM policies",
+    "description": "Placeholder workflow for drafting Omnia procedures from AAM policies.",
+    "icon": "🧾",
+    "canvas_type": "text_editor",
+    "input_file_types": [
+      "docx",
+      "txt",
+      "md",
+      "pdf"
+    ],
+    "category": "create",
+    "steps": [
+      {
+        "step_name": "Draft Plan",
+        "step_type": "llm_prompt",
+        "prompt": "Placeholder for Draft Omnia procedures from AAM policies. Outline the structure and requirements for this workflow based on the document.\n\nDocument:\n{document_content}\n\nOutline:"
+      }
+    ]
+  },
+  "gaap_assessment_question": {
+    "name": "Generate GAAL assessment question",
+    "description": "Design and refine GAAL (Global Audit & Assurance Learning) assessment questions with two-step quality assurance.",
+    "icon": "🎯",
+    "canvas_type": "text_editor",
+    "input_file_types": [
+      "docx",
+      "txt",
+      "md",
+      "pdf"
+    ],
+    "category": "create",
+    "steps": [
+      {
+        "step_name": "Create Draft Assessment",
+        "step_type": "llm_prompt",
+        "template_variables": [
+          "learning_obj",
+          "cog_level",
+          "int_audience",
+          "topic",
+          "common_mistakes"
+        ],
+        "prompt": "Create an assessment question based on the provided learning objective, cognitive level, audience, topic, and common mistakes.\n\nDocument:\n{document_content}\n\nLearning Objective: {learning_obj}\nCognitive Level: {cog_level}\nIntended Audience: {int_audience}\nTopic: {topic}\nCommon Mistakes to Avoid: {common_mistakes}\n\nCreate a high-quality GAAL assessment question that:\n1. Aligns with the learning objective and cognitive level\n2. Is appropriate for the intended audience\n3. Tests understanding of the topic\n4. Avoids common mistakes\n5. Includes clear answer choices (if multiple choice)\n6. Has a well-defined correct answer with rationale\n\nDraft Assessment Question:"
+      },
+      {
+        "step_name": "Refine and Validate",
+        "step_type": "llm_prompt",
+        "template_variables": [
+          "learning_obj",
+          "cog_level",
+          "int_audience"
+        ],
+        "prompt": "Review and refine the draft GAAL assessment question for quality, clarity, and alignment with learning objectives.\n\nSource Document:\n{document_content}\n\nDraft Question:\n{previous_output}\n\nLearning Objective: {learning_obj}\nCognitive Level: {cog_level}\nIntended Audience: {int_audience}\n\nReview the question and:\n1. **Clarity Check**: Ensure wording is clear and unambiguous\n2. **Alignment Verification**: Confirm it tests the learning objective at the right cognitive level\n3. **Distractor Quality**: If multiple choice, verify distractors are plausible but incorrect\n4. **Answer Key**: Validate the correct answer and provide detailed rationale\n5. **Difficulty Calibration**: Confirm difficulty matches the cognitive level\n6. **Bias Check**: Remove any unintended bias or ambiguity\n\nProvide the refined assessment question with:\n- The question itself\n- Answer choices (if applicable)\n- Correct answer\n- Detailed rationale explaining why the correct answer is right\n- Bloom's taxonomy level confirmation\n\nRefined GAAL Assessment Question:"
+      }
+    ],
+    "options": {
+      "learning_obj": {
+        "label": "Learning Obj",
+        "choices": []
+      },
+      "cog_level": {
+        "label": "Cognitive Level",
+        "choices": []
+      },
+      "int_audience": {
+        "label": "Intended Audience",
+        "choices": []
+      },
+      "topic": {
+        "label": "Topic",
+        "choices": []
+      },
+      "common_mistakes": {
+        "label": "Common Mistakes",
+        "choices": []
+      }
+    }
+  },
+  "update_derivative_asset": {
+    "name": "Update derivative asset after primary doc change",
+    "description": "Analyze how a derivative was created from an original, then intelligently update the derivative to reflect changes in the primary document. Includes redline diffs and detailed analysis.",
+    "icon": "♻️",
+    "canvas_type": "text_editor",
+    "input_file_types": [
+      "docx",
+      "txt",
+      "md",
+      "pdf"
+    ],
+    "category": "update",
+    "requires_labeled_files": true,
+    "labeled_file_inputs": [
+      {
+        "label": "Original Primary Asset",
+        "key": "original_primary",
+        "description": "The original version of the primary document that the derivative was based on",
+        "required": true
+      },
+      {
+        "label": "Current Derivative Asset",
+        "key": "current_derivative",
+        "description": "The existing derivative document that needs to be updated",
+        "required": true
+      },
+      {
+        "label": "Updated Primary Asset",
+        "key": "updated_primary",
+        "description": "The new version of the primary document with changes",
+        "required": true
+      }
+    ],
+    "steps": [
+      {
+        "step_name": "Redline: Original vs Updated Primary",
+        "step_type": "redline_diff",
+        "parameters": {
+          "doc1_label": "original_primary",
+          "doc2_label": "updated_primary"
+        },
+        "description": "Generate word-level redline showing changes between original and updated primary documents"
+      },
+      {
+        "step_name": "Analyze Derivative Creation Pattern",
+        "step_type": "derivative_analysis",
+        "description": "Deep analysis using reasoning models to understand how the derivative was created from the original"
+      },
+      {
+        "step_name": "Identify Primary Changes",
+        "step_type": "llm_prompt",
+        "prompt": "You are assisting with maintaining alignment between the primary source and its derivative asset. Review all available context carefully before answering.\n\n### Available Inputs\n- **Original Primary Asset:**\n{labeled_documents.original_primary.content}\n\n- **Updated Primary Asset:**\n{labeled_documents.updated_primary.content}\n\n- **Current Derivative Asset:**\n{labeled_documents.current_derivative.content}\n\n- **Redline (Original vs Updated Primary):**\n{previous_output}\n\n- **Previously Generated Insights:**\n{step_history}\n\n### Your Task\n1. Identify and categorize the updates introduced in the updated primary.\n2. Explicitly map each update to derivative sections that must change (or confirm no change).\n3. Highlight any potential gaps, dependencies, or risks.\n\n### Output Format\nProvide a structured summary with these sections:\n1. **Major Changes** – Cite primary sections, summarize change, explain derivative impact, and list derivative sections requiring update.\n2. **Minor Changes** – Smaller adjustments with derivative impact.\n3. **Impact Assessment** – Table mapping primary change → derivative section(s) → severity (High/Med/Low).\n4. **Priorities & Dependencies** – Suggested order of derivative updates with dependencies or cross-links.\n5. **Outstanding Questions** – Items that may require SME verification."
+      },
+      {
+        "step_name": "Generate Updated Derivative",
+        "step_type": "update_derivative",
+        "description": "Generate the updated derivative document maintaining transformation patterns and incorporating changes",
+        "prompt": "You are updating the derivative asset to reflect all relevant changes from the updated primary source. Use ALL context from previous steps – do not drop any detail.\n\n### Available Context\n- **Original Primary Asset:**\n{labeled_documents.original_primary.content}\n\n- **Updated Primary Asset:**\n{labeled_documents.updated_primary.content}\n\n- **Current Derivative Asset:**\n{labeled_documents.current_derivative.content}\n\n- **Derivative Creation Pattern Analysis (step 2):**\n{current_state.step_outputs[1].output}\n\n- **Primary Change Summary (step 3):**\n{current_state.step_outputs[2].output}\n\n### Your Task\nGenerate a fully updated derivative asset that:\n1. Preserves the original transformation pattern identified in step 2.\n2. Incorporates every relevant change from the updated primary (as noted in the change summary).\n3. Removes or updates outdated derivative content tied to primary content that changed.\n4. Maintains tone, style, structure, and audience alignment of the original derivative.\n5. Clearly integrates new primary information while avoiding redundancy.\n\nProvide ONLY the updated derivative document (no commentary)."
+      },
+      {
+        "step_name": "Redline: Current vs New Derivative",
+        "step_type": "redline_diff",
+        "parameters": {
+          "doc1_label": "current_derivative",
+          "doc2_label": "generated_derivative"
+        },
+        "description": "Show what changed in the derivative document"
+      },
+      {
+        "step_name": "Update Summary and Rationale",
+        "step_type": "llm_prompt",
+        "prompt": "Create a comprehensive summary of the derivative update process, ensuring full traceability back to each source artifact and intermediate output.\n\n### Available Context\n- **Original Primary Asset:**\n{labeled_documents.original_primary.content}\n\n- **Updated Primary Asset:**\n{labeled_documents.updated_primary.content}\n\n- **Original Derivative Asset:**\n{labeled_documents.current_derivative.content}\n\n- **Redline (Original vs Updated Primary):**\n{current_state.step_outputs[0].output}\n\n- **Derivative Creation Pattern Analysis (step 2):**\n{current_state.step_outputs[1].output}\n\n- **Primary Change Summary (step 3):**\n{current_state.step_outputs[2].output}\n\n- **Updated Derivative Draft (step 4):**\n{current_state.step_outputs[3].output}\n\n- **Redline (Current vs Updated Derivative) (step 5):**\n{current_state.step_outputs[4].output}\n\n### Your Task\nProduce an executive-ready summary with the following sections:\n\n1. **Update Summary** – High-level explanation of what changed and why.\n2. **Traceability Matrix** – Table mapping: Primary change → Derivative change(s) → Evidence (step references, redlines).\n3. **Transformation Pattern Validation** – Confirm the derivative still follows the pattern identified in step 2; note any deviations and rationale.\n4. **Primary Changes Incorporated** – Explicit checklist: ✓ incorporated, ✗ deferred (with reasons and follow-up actions).\n5. **Quality Assurance & Risks** – Confirm tone/style/structure alignment, highlight sections needing SME review, list any residual risks.\n6. **Recommendations & Next Steps** – Additional reviews, stakeholder sign-offs, or follow-on tasks.\n\nAssume the reader has not seen earlier steps—make it self-contained while citing the relevant step outputs for traceability."
+      }
+    ]
+  },
+  "executive_summary": {
+    "name": "Executive summary",
+    "description": "Creates a concise executive summary of the document.",
+    "icon": "📰",
+    "canvas_type": "text_editor",
+    "input_file_types": [
+      "docx",
+      "txt",
+      "md",
+      "pdf"
+    ],
+    "category": "update",
+    "options": {
+      "key_topics": {
+        "type": "number",
+        "label": "Number of Key Topics",
+        "description": "How many key points should the summary highlight?",
+        "min": 1,
+        "max": 10,
+        "step": 1,
+        "default": 3
+      },
+      "summary_length": {
+        "type": "select",
+        "label": "Summary Length",
+        "description": "Set the desired length for the executive summary.",
+        "choices": [
+          {
+            "value": "short",
+            "label": "Short (1-2 paragraphs)"
+          },
+          {
+            "value": "medium",
+            "label": "Medium (3-4 paragraphs)"
+          },
+          {
+            "value": "long",
+            "label": "Long (5+ paragraphs)"
+          }
+        ]
+      },
+      "include_recommendations": {
+        "type": "checkbox",
+        "label": "Include Action Recommendations",
+        "description": "Add actionable recommendations based on the document",
+        "default": true
+      }
+    },
+    "steps": [
+      {
+        "step_name": "Extract Key Points",
+        "step_type": "llm_prompt",
+        "template_variables": [
+          "key_topics"
+        ],
+        "prompt": "Extract the top {key_topics} key points, findings, or conclusions from the following document. Focus on the most material insights.\n\nDocument:\n{document_content}\n\nProvide your response in clean Markdown format with proper headings."
+      },
+      {
+        "step_name": "Create Summary",
+        "step_type": "llm_prompt",
+        "template_variables": [
+          "summary_length"
+        ],
+        "prompt": "Create a {summary_length} executive summary that captures the essential information from the document. Include key findings, recommendations, and conclusions, while maintaining a professional tone.\n\nOriginal Document:\n{document_content}\n\nKey Points:\n{previous_output}\n\nExecutive Summary:"
+      }
+    ]
+  }
+}
