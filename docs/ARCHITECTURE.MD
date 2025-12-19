@@ -19,13 +19,23 @@
 1. Azure Application Insights
 1. Azure Key Vault
 
+
 Infrastructure as Code (IaC) templates are used to represent current state of provisioned resources and to make them easily re-deployable. Azure Verfified Modules include both Bicep and Terreform templates for all needed resources.
 
 ## Microsoft Foundry Account and Foundry Project
 Agents and Workflows are persisted to a single Foundry Project within Microsoft Foundry. All Agents, Workflows, and Model deployments in the system are contained within this single project for ease of administration and monitoring.
 
+### Required Permissions
+- Storage Blob Data Contributor
+- API key or OAuth RBAC to MCP Server
+
 ## App Service and App Service Environment
 App Service is used to host the frontend app (ReactJS) along with the backend API that represents the orchestration layer of the Catalyst NextGen app.
+
+### Required Permissions
+- Azure AI User
+- Storage Blob Data Contributor
+- CosmosDB RBAC or Api key data plane access
 
 ## CosmosDB Account and Database
 CosmosDB is used to store all of the metadata related to user Projects and operational data for the app. A single database provisioned with the Serverless SKU is sufficient for MVP and testing phases. Production phase should consider provisioned RU/s with multi-region read capabilities enabled for resiliency.
