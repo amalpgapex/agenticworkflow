@@ -10,12 +10,15 @@ terraform {
       source  = "aztfmod/azurecaf"
       version = "~>1.2.24"
     }
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~>1.13.0"
+    }
   }
 }
 
 # Enable features for azurerm
 provider "azurerm" {
-  skip_provider_registration = "true"
   features {
     key_vault {
       purge_soft_delete_on_destroy = false
@@ -24,6 +27,11 @@ provider "azurerm" {
       prevent_deletion_if_contains_resources = false
     }
   }
+}
+
+# AzAPI provider for preview ARM resources (e.g., Foundry projects)
+provider "azapi" {
+  skip_provider_registration = false
 }
 
 # Access client_id, tenant_id, subscription_id and object_id configuration values

@@ -39,3 +39,22 @@ module "storage" {
   containers          = ["data"]
   tags                = local.tags
 }
+
+# Microsoft Foundry (Cognitive Services AIServices) account + single project
+module "foundry" {
+  source              = "./core/ai/foundry"
+  name                = "${var.environment_name}foundry"
+  project_name        = "default"
+  location            = var.location
+  resource_group_id   = azurerm_resource_group.rg.id
+  tags                = local.tags
+}
+
+# Deploy Cosmos DB account with single MongoDB database
+module "cosmos" {
+  source         = "./core/database/cosmos"
+  location       = var.location
+  rg_name        = azurerm_resource_group.rg.name
+  resource_token = local.resource_token
+  tags           = local.tags
+}
