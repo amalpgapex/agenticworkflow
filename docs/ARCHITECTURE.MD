@@ -33,9 +33,6 @@ App Service is used to host the frontend app (ReactJS) along with the backend AP
 ## Container Apps Environment
 Container Apps Environment is used to manage individual container app instances.
 
-### Required Permissions
-- System Assigned Managed Identiy with AcrPull role assignment to Container Registry resource
-
 ## Azure Container Registry (ACR)
 Azure Container Registry is used to store docker images for deployment as Container Apps. ACR is also used for remote container image builds during local development.
 
@@ -62,4 +59,5 @@ App Service Managed Identity | Cosmos DB Data Reader/Writer | Cosmos DB
 App Service Managed Identity | AI User | Microsoft Foundry
 Foundry Project Managed Identity | Storage Blob Data Contributor | Blob Storage Account
 Foundry Project Managed Identity | API Access | Remote MCP Server Container App
+Container Apps Environment Managed Identity | AcrPull | Azure Container Registry
 
