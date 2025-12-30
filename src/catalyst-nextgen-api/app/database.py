@@ -236,192 +236,192 @@ class CosmosDBClient:
 
         # ==================== PROJECT OPERATIONS ====================
     
-        async def get_projects_by_user(
-            self, 
-            user_id: str, 
-            max_items: Optional[int] = None
-        ) -> List[Dict[str, Any]]:
-            """
-            Fetch all projects for a specific user
-        
-            Args:
-                user_id: The authenticated user's ID (partition key)
-                max_items: Optional limit on number of items to return
-            
-            Returns:
-                List of project documents
-            """
-            if not self.workflows_container:
-                raise Exception("Cosmos DB not initialized")
-        
-            try:
-                # Query projects by partition key (CreatedBy) and type
-                query = "SELECT * FROM c WHERE c.CreatedBy = @userId AND c.type = @type ORDER BY c._ts DESC"
-                parameters = [
-                    {"name": "@userId", "value": user_id},
-                    {"name": "@type", "value": "project"}
-                ]
-            
-                items = []
-                async for item in self.workflows_container.query_items(
-                    query=query,
-                    parameters=parameters,
-                    partition_key=user_id,
-                    max_item_count=max_items
-                ):
-                    items.append(item)
-            
-                logger.info(f"Retrieved {len(items)} projects for user: {user_id}")
-                return items
-            
-            except exceptions.CosmosHttpResponseError as e:
-                logger.error(f"Error querying projects: {e}")
-                raise
+    async def get_projects_by_user(
+        self, 
+        user_id: str, 
+        max_items: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Fetch all projects for a specific user
     
-        async def get_project_by_id(
-            self, 
-            project_id: str, 
-            user_id: str
-        ) -> Optional[Dict[str, Any]]:
-            """
-            Fetch a specific project by ID for a user
+        Args:
+            user_id: The authenticated user's ID (partition key)
+            max_items: Optional limit on number of items to return
         
-            Args:
-                project_id: The project document ID
-                user_id: The authenticated user's ID (partition key)
-            
-            Returns:
-                Project document or None if not found
-            """
-            if not self.workflows_container:
-                raise Exception("Cosmos DB not initialized")
+        Returns:
+            List of project documents
+        """
+        if not self.workflows_container:
+            raise Exception("Cosmos DB not initialized")
+    
+        try:
+            # Query projects by partition key (CreatedBy) and type
+            query = "SELECT * FROM c WHERE c.CreatedBy = @userId AND c.type = @type ORDER BY c._ts DESC"
+            parameters = [
+                {"name": "@userId", "value": user_id},
+                {"name": "@type", "value": "project"}
+            ]
         
-            try:
-                item = await self.workflows_container.read_item(
-                    item=project_id,
-                    partition_key=user_id
-                )
-            
-                # Verify it's a project document
-                if item.get("type") != "project":
-                    logger.warning(f"Document {project_id} is not a project for user: {user_id}")
-                    return None
-            
-                logger.info(f"Retrieved project {project_id} for user: {user_id}")
-                return item
-            
-            except exceptions.CosmosResourceNotFoundError:
-                logger.warning(f"Project {project_id} not found for user: {user_id}")
+            items = []
+            async for item in self.workflows_container.query_items(
+                query=query,
+                parameters=parameters,
+                partition_key=user_id,
+                max_item_count=max_items
+            ):
+                items.append(item)
+        
+            logger.info(f"Retrieved {len(items)} projects for user: {user_id}")
+            return items
+        
+        except exceptions.CosmosHttpResponseError as e:
+            logger.error(f"Error querying projects: {e}")
+            raise
+
+    async def get_project_by_id(
+        self, 
+        project_id: str, 
+        user_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Fetch a specific project by ID for a user
+    
+        Args:
+            project_id: The project document ID
+            user_id: The authenticated user's ID (partition key)
+        
+        Returns:
+            Project document or None if not found
+        """
+        if not self.workflows_container:
+            raise Exception("Cosmos DB not initialized")
+    
+        try:
+            item = await self.workflows_container.read_item(
+                item=project_id,
+                partition_key=user_id
+            )
+        
+            # Verify it's a project document
+            if item.get("type") != "project":
+                logger.warning(f"Document {project_id} is not a project for user: {user_id}")
                 return None
-            except exceptions.CosmosHttpResponseError as e:
-                logger.error(f"Error retrieving project: {e}")
-                raise
+        
+            logger.info(f"Retrieved project {project_id} for user: {user_id}")
+            return item
+        
+        except exceptions.CosmosResourceNotFoundError:
+            logger.warning(f"Project {project_id} not found for user: {user_id}")
+            return None
+        except exceptions.CosmosHttpResponseError as e:
+            logger.error(f"Error retrieving project: {e}")
+            raise
+
+    async def create_project(
+        self, 
+        project_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Create a new project document
     
-        async def create_project(
-            self, 
-            project_data: Dict[str, Any]
-        ) -> Dict[str, Any]:
-            """
-            Create a new project document
+        Args:
+            project_data: Project document data (must include CreatedBy field)
         
-            Args:
-                project_data: Project document data (must include CreatedBy field)
-            
-            Returns:
-                Created project document with generated id
-            """
-            if not self.workflows_container:
-                raise Exception("Cosmos DB not initialized")
+        Returns:
+            Created project document with generated id
+        """
+        if not self.workflows_container:
+            raise Exception("Cosmos DB not initialized")
+    
+        if "CreatedBy" not in project_data:
+            raise ValueError("Project data must include CreatedBy field")
+    
+        # Set document type
+        project_data["type"] = "project"
+    
+        try:
+            created_item = await self.workflows_container.create_item(
+                body=project_data
+            )
+            logger.info(f"Created project {created_item['id']} for user: {project_data['CreatedBy']}")
+            return created_item
         
-            if "CreatedBy" not in project_data:
-                raise ValueError("Project data must include CreatedBy field")
+        except exceptions.CosmosHttpResponseError as e:
+            logger.error(f"Error creating project: {e}")
+            raise
+
+    async def update_project(
+        self, 
+        project_id: str,
+        user_id: str,
+        project_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Update an existing project document
+    
+        Args:
+            project_id: The project document ID
+            user_id: The authenticated user's ID (partition key)
+            project_data: Updated project data
         
-            # Set document type
+        Returns:
+            Updated project document
+        """
+        if not self.workflows_container:
+            raise Exception("Cosmos DB not initialized")
+    
+        try:
+            # Ensure id, partition key, and type are set correctly
+            project_data["id"] = project_id
+            project_data["CreatedBy"] = user_id
             project_data["type"] = "project"
         
-            try:
-                created_item = await self.workflows_container.create_item(
-                    body=project_data
-                )
-                logger.info(f"Created project {created_item['id']} for user: {project_data['CreatedBy']}")
-                return created_item
-            
-            except exceptions.CosmosHttpResponseError as e:
-                logger.error(f"Error creating project: {e}")
-                raise
+            updated_item = await self.workflows_container.replace_item(
+                item=project_id,
+                body=project_data
+            )
+            logger.info(f"Updated project {project_id} for user: {user_id}")
+            return updated_item
+        
+        except exceptions.CosmosResourceNotFoundError:
+            logger.warning(f"Project {project_id} not found for user: {user_id}")
+            raise
+        except exceptions.CosmosHttpResponseError as e:
+            logger.error(f"Error updating project: {e}")
+            raise
+
+    async def delete_project(
+        self, 
+        project_id: str,
+        user_id: str
+    ) -> bool:
+        """
+        Delete a project document
     
-        async def update_project(
-            self, 
-            project_id: str,
-            user_id: str,
-            project_data: Dict[str, Any]
-        ) -> Dict[str, Any]:
-            """
-            Update an existing project document
+        Args:
+            project_id: The project document ID
+            user_id: The authenticated user's ID (partition key)
         
-            Args:
-                project_id: The project document ID
-                user_id: The authenticated user's ID (partition key)
-                project_data: Updated project data
-            
-            Returns:
-                Updated project document
-            """
-            if not self.workflows_container:
-                raise Exception("Cosmos DB not initialized")
-        
-            try:
-                # Ensure id, partition key, and type are set correctly
-                project_data["id"] = project_id
-                project_data["CreatedBy"] = user_id
-                project_data["type"] = "project"
-            
-                updated_item = await self.workflows_container.replace_item(
-                    item=project_id,
-                    body=project_data
-                )
-                logger.info(f"Updated project {project_id} for user: {user_id}")
-                return updated_item
-            
-            except exceptions.CosmosResourceNotFoundError:
-                logger.warning(f"Project {project_id} not found for user: {user_id}")
-                raise
-            except exceptions.CosmosHttpResponseError as e:
-                logger.error(f"Error updating project: {e}")
-                raise
+        Returns:
+            True if deleted successfully
+        """
+        if not self.workflows_container:
+            raise Exception("Cosmos DB not initialized")
     
-        async def delete_project(
-            self, 
-            project_id: str,
-            user_id: str
-        ) -> bool:
-            """
-            Delete a project document
+        try:
+            await self.workflows_container.delete_item(
+                item=project_id,
+                partition_key=user_id
+            )
+            logger.info(f"Deleted project {project_id} for user: {user_id}")
+            return True
         
-            Args:
-                project_id: The project document ID
-                user_id: The authenticated user's ID (partition key)
-            
-            Returns:
-                True if deleted successfully
-            """
-            if not self.workflows_container:
-                raise Exception("Cosmos DB not initialized")
-        
-            try:
-                await self.workflows_container.delete_item(
-                    item=project_id,
-                    partition_key=user_id
-                )
-                logger.info(f"Deleted project {project_id} for user: {user_id}")
-                return True
-            
-            except exceptions.CosmosResourceNotFoundError:
-                logger.warning(f"Project {project_id} not found for user: {user_id}")
-                return False
-            except exceptions.CosmosHttpResponseError as e:
-                logger.error(f"Error deleting project: {e}")
-                raise
+        except exceptions.CosmosResourceNotFoundError:
+            logger.warning(f"Project {project_id} not found for user: {user_id}")
+            return False
+        except exceptions.CosmosHttpResponseError as e:
+            logger.error(f"Error deleting project: {e}")
+            raise
 
 # Global singleton instance
 cosmos_client = CosmosDBClient()
