@@ -13,6 +13,8 @@
 # Provisioned Resources
 1. Microsoft Foundry Account and Foundry Project
 1. App Service and App Service Environment
+1. Container Apps Environment
+1. Azure Container Registry
 1. CosmosDB Account and Database
 1. Azure Blob Storage Account and Container
 1. Azure Log Analytics Workspace
@@ -25,17 +27,14 @@ Infrastructure as Code (IaC) templates are used to represent current state of pr
 ## Microsoft Foundry Account and Foundry Project
 Agents and Workflows are persisted to a single Foundry Project within Microsoft Foundry. All Agents, Workflows, and Model deployments in the system are contained within this single project for ease of administration and monitoring.
 
-### Required Permissions
-- Storage Blob Data Contributor
-- API key or OAuth RBAC to MCP Server
-
 ## App Service and App Service Environment
 App Service is used to host the frontend app (ReactJS) along with the backend API that represents the orchestration layer of the Catalyst NextGen app.
 
-### Required Permissions
-- Azure AI User
-- Storage Blob Data Contributor
-- CosmosDB RBAC or Api key data plane access
+## Container Apps Environment
+Container Apps Environment is used to manage individual container app instances.
+
+## Azure Container Registry (ACR)
+Azure Container Registry is used to store docker images for deployment as Container Apps. ACR is also used for remote container image builds during local development.
 
 ## CosmosDB Account and Database
 CosmosDB is used to store all of the metadata related to user Projects and operational data for the app. A single database provisioned with the Serverless SKU is sufficient for MVP and testing phases. Production phase should consider provisioned RU/s with multi-region read capabilities enabled for resiliency.
@@ -51,3 +50,14 @@ Microsoft Foundry Agents and Workflows require an instance of Application Insigh
 
 ## Azure Key Vault
 Key Vault is used to persist sensitive configuration data such as API access keys and connection strings. Values will be read at build and deployment time from Azure DevOps pipelines to inject values for the correct environment into the application's configuration.
+
+# Role Assignments
+Principal | Role | Scope
+-- | -- | --
+App Service Managed Identity | Storage Blob Data Contributor | Blob Storage Account
+App Service Managed Identity | Cosmos DB Data Reader/Writer | Cosmos DB
+App Service Managed Identity | AI User | Microsoft Foundry
+Foundry Project Managed Identity | Storage Blob Data Contributor | Blob Storage Account
+Foundry Project Managed Identity | API Access | Remote MCP Server Container App
+Container Apps Environment Managed Identity | AcrPull | Azure Container Registry
+
