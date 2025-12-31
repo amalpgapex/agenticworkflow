@@ -64,3 +64,11 @@ resource "azurerm_cosmosdb_sql_container" "projects" {
   database_name       = azurerm_cosmosdb_sql_database.sqldb.name
   partition_key_paths = ["/CreatedBy"]
 }
+
+resource "azurerm_cosmosdb_sql_container" "workflows" {
+  name                = "Workflows"
+  resource_group_name = azurerm_cosmosdb_account.db.resource_group_name
+  account_name        = azurerm_cosmosdb_account.db.name
+  database_name       = azurerm_cosmosdb_sql_database.sqldb.name
+  partition_key_paths = ["/CreatedBy"]
+}

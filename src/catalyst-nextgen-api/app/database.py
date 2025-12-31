@@ -19,6 +19,7 @@ class CosmosDBClient:
         self.client: Optional[CosmosClient] = None
         self.database = None
         self.workflows_container = None
+        self.projects_container = None
         self._connected = False
     
     async def initialize(self):
@@ -35,14 +36,19 @@ class CosmosDBClient:
             
             # Get container reference for workflows
             self.workflows_container = self.database.get_container_client(
-                settings.COSMOS_CONTAINER
+                settings.COSMOS_WORKFLOWS_CONTAINER
+            )
+            
+            self.projects_container = self.database.get_container_client(
+                settings.COSMOS_PROJECTS_CONTAINER
             )
             
             # Test connection by reading container properties
             await self.workflows_container.read()
+            await self.projects_container.read()
             
             self._connected = True
-            logger.info(f"Successfully connected to Cosmos DB: {settings.COSMOS_DATABASE}/{settings.COSMOS_CONTAINER}")
+            logger.info(f"Successfully connected to Cosmos DB: {settings.COSMOS_DATABASE}/{settings.COSMOS_WORKFLOWS_CONTAINER}")
             
         except exceptions.CosmosHttpResponseError as e:
             logger.error(f"Failed to connect to Cosmos DB: {e}")
@@ -251,7 +257,7 @@ class CosmosDBClient:
         Returns:
             List of project documents
         """
-        if not self.workflows_container:
+        if not self.projects_container:
             raise Exception("Cosmos DB not initialized")
     
         try:
@@ -263,7 +269,7 @@ class CosmosDBClient:
             ]
         
             items = []
-            async for item in self.workflows_container.query_items(
+            async for item in self.projects_container.query_items(
                 query=query,
                 parameters=parameters,
                 partition_key=user_id,
@@ -293,11 +299,11 @@ class CosmosDBClient:
         Returns:
             Project document or None if not found
         """
-        if not self.workflows_container:
+        if not self.projects_container:
             raise Exception("Cosmos DB not initialized")
     
         try:
-            item = await self.workflows_container.read_item(
+            item = await self.projects_container.read_item(
                 item=project_id,
                 partition_key=user_id
             )
@@ -330,7 +336,7 @@ class CosmosDBClient:
         Returns:
             Created project document with generated id
         """
-        if not self.workflows_container:
+        if not self.projects_container:
             raise Exception("Cosmos DB not initialized")
     
         if "CreatedBy" not in project_data:
@@ -340,7 +346,7 @@ class CosmosDBClient:
         project_data["type"] = "project"
     
         try:
-            created_item = await self.workflows_container.create_item(
+            created_item = await self.projects_container.create_item(
                 body=project_data
             )
             logger.info(f"Created project {created_item['id']} for user: {project_data['CreatedBy']}")
@@ -367,7 +373,7 @@ class CosmosDBClient:
         Returns:
             Updated project document
         """
-        if not self.workflows_container:
+        if not self.projects_container:
             raise Exception("Cosmos DB not initialized")
     
         try:
@@ -376,7 +382,7 @@ class CosmosDBClient:
             project_data["CreatedBy"] = user_id
             project_data["type"] = "project"
         
-            updated_item = await self.workflows_container.replace_item(
+            updated_item = await self.projects_container.replace_item(
                 item=project_id,
                 body=project_data
             )
@@ -405,11 +411,11 @@ class CosmosDBClient:
         Returns:
             True if deleted successfully
         """
-        if not self.workflows_container:
+        if not self.projects_container:
             raise Exception("Cosmos DB not initialized")
     
         try:
-            await self.workflows_container.delete_item(
+            await self.projects_container.delete_item(
                 item=project_id,
                 partition_key=user_id
             )

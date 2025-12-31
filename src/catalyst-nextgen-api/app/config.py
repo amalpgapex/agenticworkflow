@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     )
     COSMOS_KEY: str = os.getenv("COSMOS_KEY", "")
     COSMOS_DATABASE: str = os.getenv("COSMOS_DATABASE", "InKCatalystNextGenDB")
-    COSMOS_CONTAINER: str = os.getenv("COSMOS_CONTAINER", "Projects")
+    COSMOS_PROJECTS_CONTAINER: str = os.getenv("COSMOS_PROJECTS_CONTAINER", "Projects")
+    COSMOS_WORKFLOWS_CONTAINER: str = os.getenv("COSMOS_WORKFLOWS_CONTAINER", "Workflows")
     
     # Azure Entra ID Configuration
     ENTRA_ID_TENANT_ID: str = os.getenv("ENTRA_ID_TENANT_ID", "")
