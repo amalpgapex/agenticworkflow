@@ -12,14 +12,14 @@
 
 # Provisioned Resources
 1. Microsoft Foundry Account and Foundry Project
-1. App Service and App Service Environment
-1. Container Apps Environment
 1. Azure Container Registry
-1. CosmosDB Account and Database
+1. Container Apps Environment
+1. Container App Instance (MCP Server)
 1. Azure Blob Storage Account and Container
+1. CosmosDB Account and Database
+1. Azure Key Vault
 1. Azure Log Analytics Workspace
 1. Azure Application Insights
-1. Azure Key Vault
 
 
 Infrastructure as Code (IaC) templates are used to represent current state of provisioned resources and to make them easily re-deployable. Azure Verfified Modules include both Bicep and Terreform templates for all needed resources.
