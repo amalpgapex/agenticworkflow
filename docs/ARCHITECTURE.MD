@@ -16,8 +16,14 @@
 1. Container Apps Environment
 1. Container App Instance (MCP Server)
 1. Azure Blob Storage Account and Container
-1. CosmosDB Account and Database
-1. Azure Key Vault
+1. Cosmos DB Account and Database
+1. Cosmos DB Collections
+  
+  | Collection Name | Partition Key |
+  | --------- | ---------- |
+  | Projects  | /CreatedBy |
+  | Workflows | /CreatedBy |
+8. Azure Key Vault
 1. Azure Log Analytics Workspace
 1. Azure Application Insights
 
