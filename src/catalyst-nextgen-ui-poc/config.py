@@ -6,7 +6,8 @@ SECURITY NOTE: Set OPENAI_API_KEY via environment variable, not in this file!
 For development: $env:OPENAI_API_KEY = "sk-..." (PowerShell)
 For production: Use proper secret management
 """
-
+from dotenv import load_dotenv
+load_dotenv(override=False)
 import os
 from pathlib import Path
 
@@ -15,7 +16,8 @@ from pathlib import Path
 # ============================================================================
 # IMPORTANT: Set via environment variable for security!
 # Example: $env:OPENAI_API_KEY = "sk-proj-your-key-here"
-OPENAI_API_KEY = "SECRET REMOVED"
+#OPENAI_API_KEY = "SECRET REMOVED"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "SECRET REMOVED")
 
 if not OPENAI_API_KEY:
     print("⚠️  WARNING: OPENAI_API_KEY not set!")
@@ -55,3 +57,13 @@ APP_NAME = "InK Studio"
 APP_VERSION = "2.0.0"  # Updated with alignment, comparison, and editing features
 APP_DESCRIPTION = "AI-powered document transformation with multi-canvas support, Excel alignment, and intelligent comparison"
 
+
+# ============================================================================
+# MCP Server Configuration
+# ============================================================================
+
+# Current MCP URL (your local deployment)
+MCP_BASE_URL = os.getenv("MCP_BASE_URL", "http://localhost:8000/mcp/")
+
+# Logical name for MCP (optional, recommended for portability)
+MCP_LOGICAL_NAME = os.getenv("MCP_LOGICAL_NAME", "catalyst-mcp")
