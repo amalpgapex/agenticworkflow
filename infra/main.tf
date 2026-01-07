@@ -29,15 +29,24 @@ resource "azurerm_resource_group" "rg" {
 #  azurerm_function_app for function
 
 # Deploy storage account with blob container
-module "storage" {
-  source              = "./core/storage/storageaccount"
-  name                = "${var.environment_name}sa"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
-  account_tier        = "Standard"
-  account_replication_type = "LRS"
-  containers          = ["data"]
-  tags                = local.tags
+module "storage_account" {
+  source  = "Azure/avm-res-storage-storageaccount/azurerm"
+  version = "0.6.4"
+
+  account_replication_type          = "LRS"
+  location                          = var.location
+  name                              = "${var.environment_name}sa"
+  resource_group_name               = azurerm_resource_group.rg.name
+  infrastructure_encryption_enabled = true
+
+  containers = {
+    demo = {
+      name                  = "documents"
+      container_access_type = "private"
+    }
+  }  
+  
+  tags                                = local.tags
 }
 
 # Microsoft Foundry (Cognitive Services AIServices) account + single project
@@ -51,10 +60,95 @@ module "foundry" {
 }
 
 # Deploy Cosmos DB account with single MongoDB database
-module "cosmos" {
-  source         = "./core/database/cosmos"
-  location       = var.location
-  rg_name        = azurerm_resource_group.rg.name
-  resource_token = local.resource_token
-  tags           = local.tags
+
+module "azure_cosmos_db" {
+  source              = "Azure/cosmosdb/azurerm"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  cosmos_account_name = "${var.environment_name}cosmosdb"
+  cosmos_api          = "sql"
+  sql_dbs             = {
+    one = {
+      db_name = "InKCatalystNextGenDB"
+      db_throughput = 400
+      db_max_throughput = null
+    }
+  }
+  sql_db_containers   = {
+      one = {
+        container_name           = "Projects"
+        db_name                  = "InKCatalystNextGenDB"
+        partition_key_path       = "/CreatedBy"
+        partition_key_version    = 2
+        container_throughout     = 400
+        container_max_throughput = null
+        default_ttl = null 
+        analytical_storage_ttl = null 
+        indexing_policy_settings = {
+          sql_indexing_mode = "consistent"
+          sql_included_path = "/*"
+          sql_excluded_path = null
+          composite_indexes = {
+            compositeindexone = {
+              indexes = [
+                {
+                  path  = "/container/name"
+                  order = "Ascending"
+                },
+                {
+                  path  = "/container/id"
+                  order = "Ascending"
+                }
+              ]
+            }
+          }
+          spatial_indexes = {
+            spatialindexone = {
+              path = "/*"
+            }
+          }
+        }
+        sql_unique_key = ["/container/id"]
+        conflict_resolution_policy = null 
+      }
+      one = {
+        container_name           = "Workflows"
+        db_name                  = "InKCatalystNextGenDB"
+        partition_key_path       = "/CreatedBy"
+        partition_key_version    = 2
+        container_throughout     = 400
+        container_max_throughput = null
+        default_ttl = null 
+        analytical_storage_ttl = null 
+        indexing_policy_settings = {
+          sql_indexing_mode = "consistent"
+          sql_included_path = "/*"
+          sql_excluded_path = null
+          composite_indexes = {
+            compositeindexone = {
+              indexes = [
+                {
+                  path  = "/container/name"
+                  order = "Ascending"
+                },
+                {
+                  path  = "/container/id"
+                  order = "Ascending"
+                }
+              ]
+            }
+          }
+          spatial_indexes = {
+            spatialindexone = {
+              path = "/*"
+            }
+          }
+        }
+        sql_unique_key = ["/container/id"]
+        conflict_resolution_policy = null 
+      }      
+  }
+  depends_on = [
+    azurerm_resource_group.rg
+  ]
 }
