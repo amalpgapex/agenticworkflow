@@ -62,9 +62,9 @@ import uuid, time
 @mcp_container.middleware("http")
 async def mcp_correlation_mw(request: Request, call_next):
     """
-    - Genera/propaga X-Request-ID para correlación end-to-end (APIM/clients).
-    - Expone X-Process-Time en la respuesta.
-    - La validación JWT/roles/scopes se hace en APIM, no aquí.
+    - Generates/propagates X-Request-ID for end-to-end correlation (APIM/clients).
+    - Exposes X-Process-Time in the response.
+    - JWT/roles/scopes validation is handled upstream in APIM, not here.
     """
     request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
     request.state.request_id = request_id
@@ -73,7 +73,7 @@ async def mcp_correlation_mw(request: Request, call_next):
     try:
         response = await call_next(request)
     except Exception:
-        # Error JSON uniforme con correlación
+        # Unified JSON error with correlation
         return JSONResponse(
             status_code=500,
             content={

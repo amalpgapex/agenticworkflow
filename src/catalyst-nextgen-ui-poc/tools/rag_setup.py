@@ -8,7 +8,7 @@ from langchain_classic.schema import Document
 import json
 import uuid
 
-# Global storage for RAG sessions (module-level, como en el archivo original)
+# Global storage for RAG sessions (module-level)
 _rag_sessions = {}
 
 def clear_rag_sessions() -> None:

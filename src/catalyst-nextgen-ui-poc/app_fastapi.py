@@ -46,9 +46,9 @@ import time
 @app.middleware("http")
 async def correlation_mw(request: Request, call_next):
     """
-    - Genera/propaga X-Request-ID para correlación end-to-end (APIM/clients).
-    - Expone X-Process-Time en la respuesta.
-    - La validación JWT/roles/scopes se hace en APIM (gateway), no aquí.
+    - Generates/propagates X-Request-ID for end-to-end correlation (APIM/clients).
+    - Exposes X-Process-Time in the response.
+    - JWT/roles/scopes validation is handled upstream in APIM (gateway), not here.
     """
     request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
     request.state.request_id = request_id
@@ -57,7 +57,7 @@ async def correlation_mw(request: Request, call_next):
     try:
         response = await call_next(request)
     except Exception:
-        # Error JSON uniforme con correlación
+        # Unified JSON error with correlation
         return JSONResponse(
             status_code=500,
             content={
@@ -76,7 +76,7 @@ async def correlation_mw(request: Request, call_next):
     return response
 
 # ------------------------------
-# EXCEPTION HANDLERS UNIFORMES (JSON)
+# UNIFORM EXCEPTION HANDLERS (JSON)
 # ------------------------------
 async def _extract_request_id(request: Request) -> str:
     return getattr(request.state, "request_id", request.headers.get("x-request-id", str(uuid.uuid4())))
@@ -713,7 +713,7 @@ async def upload_dual_documents(file1: UploadFile = File(...), file2: UploadFile
     }
 
 # ------------------------------
-# STREAMING (SSE) DE TRANSFORMACIONES
+# STREAMING (SSE) FOR TRANSFORMATIONS
 # ------------------------------
 @app.get("/api/stream/{transformation_key}")
 async def stream_transformation(
@@ -1042,11 +1042,11 @@ async def execute_tool_generic(payload: Dict[str, Any], request: Request):
             "meta": { "tool": tool_id, "request_id": request_id }
         })
     except asyncio.TimeoutError:
-        raise HTTPException(status_code=504, detail="Timeout en tool execution")
+        raise HTTPException(status_code=504, detail="Timeout during tool execution")
     except HTTPException as he:
         raise he
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error interno: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal error: {e}")
 
 # Register router
 app.include_router(router)
