@@ -1,0 +1,37 @@
+# Envs
+venv/
+ENV/
+env/
+.venv/
+
+# Python cache/artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.build/
+dist/
+.cache/
+.mypy_cache/
+.pytest_cache/
+
+# Logs / local files
+*.log
+.env
+.env.*
+.DS_Store
+.env.local
+
+# Editors/IDE
+.vscode/
+.idea/
+*~
+
+# OS
+Thumbs.db
+
+# Unit test coverage
+.coverage
+htmlcov/
