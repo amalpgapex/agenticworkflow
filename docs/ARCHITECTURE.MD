@@ -1,5 +1,5 @@
 # Azure Platform Architecture Design
-![azure architecture diagram](./Catalyst%20NextGen%20Architecture%20Design.drawio.png)
+![azure architecture diagram](./Catalyst-NextGen-Arq.drawio.png)
 
 # Dataflow
 1. User browses to the app and authenticates using Entra ID credentials.
