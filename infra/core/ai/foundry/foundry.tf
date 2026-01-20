@@ -1,3 +1,11 @@
+terraform {
+  required_providers {
+    azapi = {
+      source  = "azure/azapi"
+      version = ">= 1.0.0"
+    }
+  }
+}
 # Microsoft Foundry account (Cognitive Services - AIServices)
 # Using AzAPI to ensure latest API support for Foundry properties
 
