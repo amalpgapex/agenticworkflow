@@ -3,14 +3,14 @@ InK Studio - Main FastAPI Application
 Modern AI-powered document transformation with multi-canvas support
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Form
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Form, APIRouter
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sse_starlette.sse import EventSourceResponse
-import asyncio
+import asyncio, uuid
 import json
 import tempfile
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Dict, Any, Tuple
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -22,6 +22,14 @@ from document_processor import DocumentProcessor
 from langgraph_agent import DocumentTransformationAgent
 from agentic_tools import clear_rag_sessions
 
+from app.utils.mcp_uri import build_mcp_uri
+from app.utils.skill_descriptor_auto import build_skill_descriptor_for
+from app.utils.tool_contract import build_descriptor_from_contract, CONTRACTS
+from app.utils.skill_adapters import adapt_inputs
+
+# ------------------------------
+# APP INIT
+# ------------------------------
 # Initialize FastAPI app
 app = FastAPI(title=APP_NAME, description=APP_DESCRIPTION)
 
@@ -30,6 +38,82 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 pm = PromptManager()
 dp = DocumentProcessor()
 
+# ------------------------------
+# CORRELATION & ERROR MIDDLEWARE (Azure-ready)
+# ------------------------------
+import time
+
+@app.middleware("http")
+async def correlation_mw(request: Request, call_next):
+    """
+    - Generates/propagates X-Request-ID for end-to-end correlation (APIM/clients).
+    - Exposes X-Process-Time in the response.
+    - JWT/roles/scopes validation is handled upstream in APIM (gateway), not here.
+    """
+    request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
+    request.state.request_id = request_id
+
+    start = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        # Unified JSON error with correlation
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": {
+                    "code": 500,
+                    "message": "Internal Server Error",
+                    "request_id": request_id
+                }
+            }
+        )
+
+    duration = time.perf_counter() - start
+    response.headers["X-Request-ID"] = request_id
+    response.headers["X-Process-Time"] = f"{duration:.4f}"
+    return response
+
+# ------------------------------
+# UNIFORM EXCEPTION HANDLERS (JSON)
+# ------------------------------
+async def _extract_request_id(request: Request) -> str:
+    return getattr(request.state, "request_id", request.headers.get("x-request-id", str(uuid.uuid4())))
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    request_id = await _extract_request_id(request)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "success": False,
+            "error": {
+                "code": exc.status_code,
+                "message": str(exc.detail),
+                "request_id": request_id
+            }
+        }
+    )
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    request_id = await _extract_request_id(request)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "error": {
+                "code": 500,
+                "message": "Internal Server Error",
+                "request_id": request_id
+            }
+        }
+    )
+
+# ------------------------------
+# CONFIG / AGENT SETUP
+# ------------------------------
 def load_canvas_config():
     try:
         with open(config.CANVAS_TYPES_FILE, 'r', encoding='utf-8') as f:
@@ -93,7 +177,9 @@ def reset_current_state(clear_rag: bool = True) -> None:
         except Exception as e:
             print(f"Warning: Unable to clear RAG sessions: {e}")
 
-
+# ------------------------------
+# PAGES
+# ------------------------------
 @app.get("/", response_class=HTMLResponse)
 async def landing():
     """Serve the landing page"""
@@ -129,7 +215,9 @@ async def workflow_builder():
     except UnicodeDecodeError as e:
         return HTMLResponse(content=f"<h1>Encoding Error</h1><p>Error: {str(e)}</p>")
 
-
+# ------------------------------
+# API: CANVAS TYPES & TRANSFORMATIONS
+# ------------------------------
 @app.get("/api/canvas-types")
 async def get_canvas_types():
     """Get all available canvas types"""
@@ -389,7 +477,9 @@ async def import_transformation(data: dict):
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-
+# ------------------------------
+# AUDIO / UPLOADS
+# ------------------------------
 @app.get("/api/audio/{filename}")
 async def serve_audio(filename: str):
     """Serve generated audio files"""
@@ -622,7 +712,9 @@ async def upload_dual_documents(file1: UploadFile = File(...), file2: UploadFile
         "default_canvas_type": "alignment_viewer"
     }
 
-
+# ------------------------------
+# STREAMING (SSE) FOR TRANSFORMATIONS
+# ------------------------------
 @app.get("/api/stream/{transformation_key}")
 async def stream_transformation(
     transformation_key: str,
@@ -869,3 +961,96 @@ async def export_document(data: dict):
         media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         filename='transformed_document.docx'
     )
+
+# -----------------------------------------------------------------------------------
+# Generic Multiplexer per tool (for any tool registered in app_host.py)
+# -----------------------------------------------------------------------------------
+
+router = APIRouter()
+
+def _get_registry():
+    try:
+        if 'agent' in globals() and getattr(agent, "tool_registry", None):
+            return agent.tool_registry
+    except Exception:
+        pass
+    # If ToolRegistry is unavailable, return None
+    if ToolRegistry is None:
+        return None
+    return ToolRegistry(api_key=OPENAI_API_KEY)
+
+@router.get("/api/tools")
+async def list_registered_tools():
+    try:
+        registry = _get_registry()
+        if not registry or not getattr(registry, "tools", None):
+            return { "success": True, "count": 0, "tools": [] }
+
+        tools = []
+        for name in getattr(registry, "tools", {}).keys():
+            tools.append(build_descriptor_from_contract(name))
+        return { "success": True, "count": len(tools), "tools": tools }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error listing tools: {e}")
+
+def _resolve_tool_id(payload: dict) -> str:
+    # Resolve tool id from root keys
+    for k in ("key", "name"):
+        v = payload.get(k)
+        if isinstance(v, str) and v.strip():
+            return v.strip()
+    return ""
+
+@router.get("/health", include_in_schema=False)
+async def rest_health():
+    # Health check for the REST app (in addition to any MCP host health)
+    return {"status": "ok", "app": "REST", "message": "FastAPI REST app mounted"}
+
+
+@router.post("/api/tool/execute")
+async def execute_tool_generic(payload: Dict[str, Any], request: Request):
+
+    # 0) If wrapped under "payload", unwrap the 'payload' wrapper
+    # payload = _unwrap(payload)
+    payload = payload.get("payload", payload)
+
+    # 1) Resolve tool id from root / metadata / headers (simplified here to root)
+    tool_id = (payload.get("key") or payload.get("name") or "").strip()
+    if not tool_id:
+        raise HTTPException(status_code=400, detail="Missing 'key' (skillId) or 'name' (skillName)")
+
+    tool_args = payload.get("arguments", {}) or {}
+    tool_call_id = payload.get("tool_call_id")
+    request_id = request.headers.get("x-request-id", str(uuid.uuid4()))
+
+    # 2) Look up the tool
+    registry = _get_registry()
+    tool = registry.get_tool(tool_id)
+    if not tool:
+        raise HTTPException(status_code=404, detail=f"Tool '{tool_id}' not found")
+
+    # 3) Adapt inputs (files or in-memory)
+    context = adapt_inputs(tool_id, tool_args)
+
+    # 4) Execute the tool
+    try:
+        result = await asyncio.wait_for(asyncio.to_thread(tool.execute, context, None), timeout=90)
+        return JSONResponse(status_code=200, content={
+            "success": True,
+            "tool_call_id": tool_call_id,
+            "output": result,
+            "meta": { "tool": tool_id, "request_id": request_id }
+        })
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="Timeout during tool execution")
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal error: {e}")
+
+# Register router
+app.include_router(router)
+
+
+
+

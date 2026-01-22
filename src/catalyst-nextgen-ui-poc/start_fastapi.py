@@ -13,7 +13,9 @@ if __name__ == "__main__":
     print("=" * 60)
     
     uvicorn.run(
-        "app_fastapi:app",
+        #"app_fastapi:app",
+        # MCP Server
+        "app_host:app",
         host=HOST,
         port=PORT,
         reload=RELOAD,
