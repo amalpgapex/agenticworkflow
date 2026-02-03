@@ -1,0 +1,47 @@
+{
+  "source_chunks": [
+    {
+      "text": "The quick brown fox jumps over the lazy dog in the forest.",
+      "document_id": "doc_v1",
+      "chunk_index": 0
+    },
+    {
+      "text": "Python is a high-level, interpreted programming language known for simplicity.",
+      "document_id": "doc_v1",
+      "chunk_index": 1
+    },
+    {
+      "text": "Machine learning algorithms require large datasets for training.",
+      "document_id": "doc_v1",
+      "chunk_index": 2
+    },
+    {
+      "text": "The Earth orbits around the Sun in an elliptical path.",
+      "document_id": "doc_v1",
+      "chunk_index": 3
+    }
+  ],
+  "target_chunks": [
+    {
+      "text": "A fast brown fox leaps over a sleeping dog in the woods.",
+      "document_id": "doc_v2",
+      "chunk_index": 0
+    },
+    {
+      "text": "Python is an interpreted, high-level programming language designed for code readability.",
+      "document_id": "doc_v2",
+      "chunk_index": 1
+    },
+    {
+      "text": "Deep learning models use neural networks with multiple layers.",
+      "document_id": "doc_v2",
+      "chunk_index": 2
+    },
+    {
+      "text": "JavaScript is a versatile scripting language for web development.",
+      "document_id": "doc_v2",
+      "chunk_index": 3
+    }
+  ],
+  "similarity_threshold": 0.3
+}

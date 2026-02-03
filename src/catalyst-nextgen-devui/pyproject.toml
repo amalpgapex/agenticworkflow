@@ -1,0 +1,10 @@
+[project]
+name = "devui"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "agent-framework==1.0.0b260128",
+    "azure-identity>=1.26.0b1",
+]
