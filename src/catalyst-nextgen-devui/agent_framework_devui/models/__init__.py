@@ -44,7 +44,11 @@ from ._openai_custom import (
     ResponseWorkflowEventComplete,
 )
 
-from .comparison_models import AlignmentInput, AlignmentResult
+from .comparison_models import (
+    AlignmentInput, 
+    AlignmentResult,
+    ComparisonRequest,
+)
 
 # Type alias for compatibility
 OpenAIResponse = Response
@@ -95,4 +99,5 @@ __all__ = [
     "ToolParam",
     "AlignmentInput",
     "AlignmentResult",
+    "ComparisonRequest",
 ]

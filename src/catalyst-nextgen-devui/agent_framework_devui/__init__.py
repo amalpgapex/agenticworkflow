@@ -4,7 +4,6 @@
 
 import importlib.metadata
 import logging
-import webbrowser
 from collections.abc import Callable
 from typing import Any
 
@@ -12,16 +11,6 @@ from ._conversations import CheckpointConversationManager
 from ._server import DevServer
 from .models import AgentFrameworkRequest, OpenAIError, OpenAIResponse, ResponseStreamEvent
 from .models._discovery_models import DiscoveryResponse, EntityInfo, EnvVarRequirement
-from .workflows import compare_contents
-from .executors import (
-    SemanticAlignment, 
-    AlignmentInput,
-    AlignmentResult,
-    DocumentChunk,
-    ChunkAlignment,
-    AgentExecutor
-)
-from ._utils import create_foundry_agent
 
 logger = logging.getLogger(__name__)
 
@@ -222,14 +211,6 @@ __all__ = [
     "ResponseStreamEvent",
     "register_cleanup",
     "serve",
-    "compare_contents",
-    "SemanticAlignment",
-    "AlignmentInput",
-    "AlignmentResult",
-    "DocumentChunk",
-    "ChunkAlignment",
-    "AgentExecutor",
-    "create_foundry_agent",
 ]
 
 
