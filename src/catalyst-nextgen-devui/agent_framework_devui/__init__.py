@@ -11,6 +11,7 @@ from ._conversations import CheckpointConversationManager
 from ._server import DevServer
 from .models import AgentFrameworkRequest, OpenAIError, OpenAIResponse, ResponseStreamEvent
 from .models._discovery_models import DiscoveryResponse, EntityInfo, EnvVarRequirement
+from ._utils import create_foundry_agent
 
 logger = logging.getLogger(__name__)
 
@@ -211,6 +212,7 @@ __all__ = [
     "ResponseStreamEvent",
     "register_cleanup",
     "serve",
+    "create_foundry_agent",
 ]
 
 

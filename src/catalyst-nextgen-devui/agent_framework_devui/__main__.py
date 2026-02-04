@@ -6,5 +6,5 @@ from agent_framework_devui.workflows import create_comparison_workflow
 
 if __name__ == "__main__":
     load_dotenv(override=True)
-    compare_contents = asyncio.run(create_comparison_workflow(use_ai=False))
+    compare_contents = asyncio.run(create_comparison_workflow())
     serve(entities=[compare_contents])

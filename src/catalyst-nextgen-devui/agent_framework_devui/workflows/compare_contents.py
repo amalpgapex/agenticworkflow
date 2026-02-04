@@ -13,7 +13,6 @@ and highlighting meaningful changes.
 """
 
 import logging
-from typing import Any
 
 from agent_framework import WorkflowBuilder, Workflow
 from agent_framework_devui.executors import (
@@ -30,11 +29,8 @@ logger = logging.getLogger(__name__)
 # Workflow Builder
 # ============================================================================
 
-async def create_comparison_workflow(use_ai: bool = False) -> Workflow:
-    """Create the document comparison workflow.
-
-    Args:
-        use_ai: Whether to use AI agents for analysis and summaries
+async def create_comparison_workflow() -> Workflow:
+    """Create the document comparison workflow.    
 
     Returns:
         Configured workflow instance
@@ -46,32 +42,10 @@ async def create_comparison_workflow(use_ai: bool = False) -> Workflow:
     alignment_executor = SemanticAlignment(id="SemanticAlignment")
 
     # Create comparison analyzer
-    if use_ai:
-        try:
-            analyzer_agent = await create_foundry_agent(
-                agent_name="ComparisonAnalyzer",
-                instructions="You are an expert at analyzing text differences. Provide clear, concise descriptions of changes.",
-            )
-            comparison_analyzer = ComparisonAnalyzer(agent=analyzer_agent, id="ComparisonAnalyzer") # type: ignore
-        except Exception as e:
-            logger.warning(f"Failed to create analyzer agent: {e}, using basic mode")
-            comparison_analyzer = ComparisonAnalyzer(agent=None, id="ComparisonAnalyzer")
-    else:
-        comparison_analyzer = ComparisonAnalyzer(agent=None, id="ComparisonAnalyzer")
+    comparison_analyzer = ComparisonAnalyzer(id="ComparisonAnalyzer")
 
     # Create summary generator
-    if use_ai:
-        try:
-            summary_agent = await create_foundry_agent(
-                agent_name="SummaryGenerator",
-                instructions="You are an expert at creating comprehensive document comparison summaries.",
-            )
-            summary_generator = SummaryGenerator(agent=summary_agent, id="SummaryGenerator") # type: ignore
-        except Exception as e:
-            logger.warning(f"Failed to create summary agent: {e}, using basic mode")
-            summary_generator = SummaryGenerator(agent=None, id="SummaryGenerator")
-    else:
-        summary_generator = SummaryGenerator(agent=None, id="SummaryGenerator")
+    summary_generator = SummaryGenerator(id="SummaryGenerator")
 
     # Build workflow: Alignment → Analysis → Summary
     workflow = (

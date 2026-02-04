@@ -76,7 +76,7 @@ class SampleDataProvider(Executor):
 
     @handler
     async def handle_request(
-        self, _: ComparisonRequest, ctx: WorkflowContext[AlignmentInput, None]
+        self, request: ComparisonRequest, ctx: WorkflowContext[AlignmentInput, None]
     ) -> None:
         """Provide sample input data.
 
@@ -85,4 +85,5 @@ class SampleDataProvider(Executor):
             ctx: Workflow context for sending messages
         """        
         logger.info("Providing sample document comparison input")
+        await ctx.set_shared_state("use_agents", request.use_agents)
         await ctx.send_message(self.sample_data)

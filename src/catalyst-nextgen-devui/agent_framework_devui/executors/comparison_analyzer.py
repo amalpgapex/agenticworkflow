@@ -3,6 +3,7 @@ import logging
 from agent_framework import ChatAgent, Executor, WorkflowContext, handler
 from agent_framework_devui.executors.align import AlignmentResult
 from agent_framework_devui.models.comparison_models import ComparisonAnalysis
+from .._utils import create_foundry_agent
 
 logger = logging.getLogger(__name__)
 
@@ -16,14 +17,13 @@ class ComparisonAnalyzer(Executor):
 
     agent: ChatAgent | None
 
-    def __init__(self, agent: ChatAgent | None = None, id: str = "ComparisonAnalyzer"):
+    def __init__(self, id: str = "ComparisonAnalyzer"):
         """Initialize the comparison analyzer.
 
         Args:
             agent: Optional Foundry agent for deep analysis
             id: Executor ID for workflow tracking
         """
-        self.agent = agent
         super().__init__(id=id)
 
     def _analyze_without_agent(self, alignment_result: AlignmentResult) -> ComparisonAnalysis:
@@ -140,8 +140,16 @@ Provide a concise summary of changes (1-2 sentences)."""
 
         logger.info(f"Analyzing {alignment_result.aligned_count} alignments")
 
-        # Perform analysis
-        if self.agent:
+        # Perform analysis        
+        use_ai = await ctx.get_shared_state("use_agents")
+        if use_ai:
+            try:
+                self.agent = await create_foundry_agent(
+                    agent_name="ComparisonAnalyzer",
+                    instructions="You are an expert at analyzing text differences. Provide clear, concise descriptions of changes.",
+                ) # type: ignore
+            except Exception as e:
+                logger.warning(f"Failed to create analyzer agent: {e}, using basic mode")
             analysis = await self._analyze_with_agent(alignment_result)
         else:
             analysis = self._analyze_without_agent(alignment_result)
