@@ -23,6 +23,7 @@ The project is organized into several key components:
 
 ### Prerequisites
 
+- [VS Code](https://code.visualstudio.com/download)
 - **Python 3.12+**
 - **uv** (Python package manager) - [Install uv](https://docs.astral.sh/uv/getting-started/)
 - **Node.js 18+** (for frontend development)
