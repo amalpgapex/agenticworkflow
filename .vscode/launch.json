@@ -18,6 +18,16 @@
             "jinja": true,
             "justMyCode": true,
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: Debug DevUI Backend",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "agent_framework_devui",
+            "justMyCode": true,
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/src/catalyst-nextgen-devui",
+            "preLaunchTask": "Build DevUI Frontend"
         }
     ]
 }
