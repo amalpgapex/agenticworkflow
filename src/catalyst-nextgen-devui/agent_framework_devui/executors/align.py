@@ -13,7 +13,8 @@ from typing import Any
 
 import numpy as np
 from agent_framework import Executor, WorkflowContext, handler
-from pydantic import BaseModel, Field
+
+from ..models.comparison_models import AlignmentInput, AlignmentResult
 
 logger = logging.getLogger(__name__)
 
@@ -40,30 +41,6 @@ class ChunkAlignment:
     source_chunk: DocumentChunk
     target_chunk: DocumentChunk
     similarity_score: float
-
-
-class AlignmentInput(BaseModel):
-    """Input model for alignment executor."""
-
-    source_chunks: list[dict[str, Any]] = Field(
-        description="List of chunks from the source document with 'text', 'document_id', 'chunk_index'"
-    )
-    target_chunks: list[dict[str, Any]] = Field(
-        description="List of chunks from the target document with 'text', 'document_id', 'chunk_index'"
-    )
-    similarity_threshold: float = Field(
-        default=0.5, ge=0.0, le=1.0, description="Minimum similarity score to consider as match"
-    )
-
-
-class AlignmentResult(BaseModel):
-    """Result of chunk alignment."""
-
-    alignments: list[dict[str, Any]] = Field(description="List of chunk alignments with similarity scores")
-    total_source_chunks: int = Field(description="Total number of source chunks")
-    total_target_chunks: int = Field(description="Total number of target chunks")
-    aligned_count: int = Field(description="Number of alignments found above threshold")
-    unaligned_source_indices: list[int] = Field(description="Indices of source chunks with no match above threshold")
 
 
 # ============================================================================
@@ -155,7 +132,7 @@ class SimpleEmbedder:
 # ============================================================================
 
 
-class SemanticAlignmentExecutor(Executor):
+class SemanticAlignment(Executor):
     """
     Executor that aligns chunks from two documents using semantic similarity.
 
@@ -321,61 +298,3 @@ class SemanticAlignmentExecutor(Executor):
 
         # Yield the result
         await ctx.send_message(result)
-
-
-def main():
-    """Demonstration of the semantic alignment executor."""
-    import asyncio
-
-    async def demo():
-        # Create executor
-        executor = SemanticAlignmentExecutor()
-
-        # Example: Two documents with similar content
-        source_chunks = [
-            {"text": "The quick brown fox jumps over the lazy dog", "document_id": "doc1", "chunk_index": 0},
-            {"text": "Python is a high-level programming language", "document_id": "doc1", "chunk_index": 1},
-            {"text": "Machine learning models require large datasets", "document_id": "doc1", "chunk_index": 2},
-        ]
-
-        target_chunks = [
-            {"text": "A fast brown fox leaps over a sleeping dog", "document_id": "doc2", "chunk_index": 0},
-            {"text": "Deep learning uses neural networks", "document_id": "doc2", "chunk_index": 1},
-            {"text": "Java is an object-oriented language", "document_id": "doc2", "chunk_index": 2},
-        ]
-
-        input_data = AlignmentInput(source_chunks=source_chunks, target_chunks=target_chunks, similarity_threshold=0.3)
-
-        # Execute alignment
-        print("Running semantic alignment demo...\n")
-
-        class DemoContext:
-            def __init__(self):
-                self.output = None
-
-            async def yield_output(self, result):
-                self.output = result
-
-        ctx = DemoContext()
-        await executor.handle_alignment(input_data, ctx)  # type: ignore
-
-        result = ctx.output
-        if result:
-            print(f"Total source chunks: {result.total_source_chunks}")
-            print(f"Total target chunks: {result.total_target_chunks}")
-            print(f"Alignments found: {result.aligned_count}\n")
-
-            for idx, alignment in enumerate(result.alignments):
-                print(f"Alignment {idx + 1}:")
-                print(f"  Source: {alignment['source_chunk']['text'][:60]}...")
-                print(f"  Target: {alignment['target_chunk']['text'][:60]}...")
-                print(f"  Similarity: {alignment['similarity_score']:.3f}\n")
-
-            if result.unaligned_source_indices:
-                print(f"Unaligned source chunks: {result.unaligned_source_indices}")
-
-    asyncio.run(demo())
-
-
-if __name__ == "__main__":
-    main()
