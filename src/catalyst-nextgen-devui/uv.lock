@@ -862,6 +862,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "agent-framework" },
+    { name = "azure-ai-projects" },
     { name = "azure-cosmos" },
     { name = "azure-identity" },
 ]
@@ -869,6 +870,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "agent-framework", specifier = "==1.0.0b260128" },
+    { name = "azure-ai-projects", specifier = ">=2.0.0b3" },
     { name = "azure-cosmos", specifier = ">=4.9.0" },
     { name = "azure-identity", specifier = ">=1.26.0b1" },
 ]
