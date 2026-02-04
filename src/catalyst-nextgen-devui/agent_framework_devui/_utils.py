@@ -9,11 +9,11 @@ from dataclasses import fields, is_dataclass
 from types import UnionType
 from typing import Any, Union, get_args, get_origin
 
-from agent_framework_azure_ai import AzureAIAgentOptions
+from agent_framework_azure_ai import AzureAIProjectAgentOptions
 from azure.identity.aio import DefaultAzureCredential
 
 from agent_framework import ChatAgent, ChatMessage
-from agent_framework.azure import AzureAIAgentsProvider
+from agent_framework.azure import AzureAIProjectAgentProvider
 
 logger = logging.getLogger(__name__)
 
@@ -648,7 +648,7 @@ def _parse_dict_input(input_dict: dict[str, Any], target_type: type) -> Any:
     # Fallback: return original dict
     return input_dict
 
-async def create_foundry_agent(agent_name: str, instructions: str, tools: list[Any] | None = None) -> ChatAgent[AzureAIAgentOptions]:
+async def create_foundry_agent(agent_name: str, instructions: str, tools: list[Any] | None = None) -> ChatAgent[AzureAIProjectAgentOptions]:
     """
     Create the agent.
     
@@ -665,17 +665,12 @@ async def create_foundry_agent(agent_name: str, instructions: str, tools: list[A
             "FOUNDRY_MODEL_DEPLOYMENT_NAME environment variables."
         )
     
-    # Create credential and client
-    credential = DefaultAzureCredential()
-    
     # Create the Foundry agent
-    agent = await AzureAIAgentsProvider(
+    return await AzureAIProjectAgentProvider(
         project_endpoint=project_endpoint,
-        credential=credential,
+        credential=DefaultAzureCredential(),
     ).create_agent(
         name=agent_name,
         instructions=instructions,
         tools=tools,
-    )
-
-    return agent
+    )    

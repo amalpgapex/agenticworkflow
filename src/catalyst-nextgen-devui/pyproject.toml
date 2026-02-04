@@ -8,4 +8,5 @@ dependencies = [
     "agent-framework==1.0.0b260128",
     "azure-identity>=1.26.0b1",
     "azure-cosmos>=4.9.0",
+    "azure-ai-projects>=2.0.0b3",
 ]
