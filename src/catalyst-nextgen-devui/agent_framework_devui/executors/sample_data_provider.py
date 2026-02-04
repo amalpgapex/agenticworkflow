@@ -1,6 +1,6 @@
 from typing import Any
 from agent_framework import Executor, WorkflowContext, handler
-from agent_framework_devui.models.comparison_models import AlignmentInput
+from agent_framework_devui.models.comparison_models import AlignmentInput, ComparisonRequest
 import logging
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ class SampleDataProvider(Executor):
 
     @handler
     async def handle_request(
-        self, _: str, ctx: WorkflowContext[AlignmentInput, None]
+        self, request: ComparisonRequest, ctx: WorkflowContext[AlignmentInput, None]
     ) -> None:
         """Provide sample input data.
 
@@ -85,4 +85,5 @@ class SampleDataProvider(Executor):
             ctx: Workflow context for sending messages
         """        
         logger.info("Providing sample document comparison input")
+        await ctx.set_shared_state("use_agents", request.use_agents)
         await ctx.send_message(self.sample_data)

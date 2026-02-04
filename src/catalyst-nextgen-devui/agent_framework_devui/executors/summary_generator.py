@@ -3,6 +3,7 @@ from typing import Any, Never
 
 from agent_framework import ChatAgent, Executor, WorkflowContext, handler
 from agent_framework_devui.models.comparison_models import ComparisonAnalysis
+from .._utils import create_foundry_agent
 
 logger = logging.getLogger(__name__)
 
@@ -15,14 +16,12 @@ class SummaryGenerator(Executor):
 
     agent: ChatAgent | None
 
-    def __init__(self, agent: ChatAgent | None = None, id: str = "SummaryGenerator"):
+    def __init__(self, id: str = "SummaryGenerator"):
         """Initialize the summary generator.
 
         Args:
-            agent: Optional Foundry agent for rich summaries
             id: Executor ID for workflow tracking
-        """
-        self.agent = agent
+        """        
         super().__init__(id=id)
 
     def _generate_basic_summary(self, analysis: ComparisonAnalysis) -> str:
@@ -117,9 +116,18 @@ Keep the summary concise but informative."""
             ctx: Workflow context for yielding output
         """
         logger.info("Generating comparison summary")
-
+        # Get configuration from state
+        use_ai = await ctx.get_shared_state("use_agents")
+        
         # Generate summary
-        if self.agent:
+        if use_ai:
+            try:
+                self.agent = await create_foundry_agent(
+                    agent_name="SummaryGenerator",
+                    instructions="You are an expert at creating comprehensive document comparison summaries.",
+                ) # type: ignore
+            except Exception as e:
+                logger.warning(f"Failed to create summary agent: {e}, using basic mode")
             summary = await self._generate_ai_summary(analysis)
         else:
             summary = self._generate_basic_summary(analysis)

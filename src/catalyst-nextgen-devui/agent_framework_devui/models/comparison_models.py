@@ -35,3 +35,8 @@ class AlignmentResult(BaseModel):
     total_target_chunks: int = Field(description="Total number of target chunks")
     aligned_count: int = Field(description="Number of alignments found above threshold")
     unaligned_source_indices: list[int] = Field(description="Indices of source chunks with no match above threshold")
+
+class ComparisonRequest(BaseModel):
+    """Request model for comparison analyzer."""
+
+    use_agents: bool = Field(title="Use AI Foundry Agents", description="Use agents for summary generation and analysis", default=False)
