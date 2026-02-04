@@ -1,8 +1,10 @@
+import asyncio
 from agent_framework_devui import serve
 from dotenv import load_dotenv
-def main() -> None:
-    load_dotenv(override=True)
-    serve(entities_dir="./agent_framework_devui/workflows/")
+from agent_framework_devui.workflows import create_comparison_workflow
+
 
 if __name__ == "__main__":
-    main()
+    load_dotenv(override=True)
+    compare_contents = asyncio.run(create_comparison_workflow(use_ai=False))
+    serve(entities=[compare_contents])
