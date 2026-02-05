@@ -14,6 +14,7 @@ from azure.identity.aio import DefaultAzureCredential
 
 from agent_framework import ChatAgent, ChatMessage
 from agent_framework.azure import AzureAIProjectAgentProvider
+from ._cleanup import register_cleanup
 
 logger = logging.getLogger(__name__)
 
@@ -665,12 +666,17 @@ async def create_foundry_agent(agent_name: str, instructions: str, tools: list[A
             "FOUNDRY_MODEL_DEPLOYMENT_NAME environment variables."
         )
     
+    credential = DefaultAzureCredential()
+
     # Create the Foundry agent
-    return await AzureAIProjectAgentProvider(
+    agent = await AzureAIProjectAgentProvider(
         project_endpoint=project_endpoint,
-        credential=DefaultAzureCredential(),
+        credential=credential,
     ).create_agent(
         name=agent_name,
         instructions=instructions,
         tools=tools,
     )    
+
+    register_cleanup(agent, credential.close)
+    return agent

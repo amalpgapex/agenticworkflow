@@ -139,7 +139,7 @@ class EntityDiscovery:
         self._loaded_objects[entity_id] = entity_obj
 
         # Check module-level registry for cleanup hooks
-        from . import _get_registered_cleanup_hooks
+        from ._cleanup import _get_registered_cleanup_hooks
 
         registered_hooks = _get_registered_cleanup_hooks(entity_obj)
         if registered_hooks:
@@ -297,7 +297,7 @@ class EntityDiscovery:
         self._loaded_objects[entity_id] = entity_object
 
         # Check module-level registry for cleanup hooks
-        from . import _get_registered_cleanup_hooks
+        from ._cleanup import _get_registered_cleanup_hooks
 
         registered_hooks = _get_registered_cleanup_hooks(entity_object)
         if registered_hooks:
