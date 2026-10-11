@@ -1,0 +1,15 @@
+{
+  "results": [
+    {
+      "name": "Lisbon",
+      "latitude": 38.71667,
+      "longitude": -9.13333,
+      "country": "Portugal",
+      "country_code": "PT",
+      "feature_code": "PPLC",
+      "timezone": "Europe/Lisbon",
+      "population": 517802,
+      "admin1": "Lisbon"
+    }
+  ]
+}

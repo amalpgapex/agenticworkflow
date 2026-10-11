@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Review {{ status.current_step }}</title>
+  <style>
+    body { font-family: sans-serif; margin: 24px; }
+    textarea { width: 100%; min-height: 200px; font-family: monospace; }
+    .actions button { margin-right: 8px; }
+    .warn { color: #9b2c2c; }
+  </style>
+</head>
+<body>
+  <h1>Review {{ status.current_step }} · attempt {{ status.attempt }}</h1>
+  <p>Signed in as {{ email }}</p>
+  <p>Verdict: {{ (status.eval or {}).verdict }} · score {{ (status.eval or {}).score }}</p>
+  <h2>Checks</h2>
+  <ul>
+    {% for check in status.checks or [] %}
+    <li>{{ check.name }}: {{ "pass" if check.passed else "fail" }} {{ check.detail }}</li>
+    {% endfor %}
+  </ul>
+  <h2>Output</h2>
+  <pre>{{ output_json }}</pre>
+  <form method="post" class="actions">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <p><label>Feedback<br><textarea name="feedback"></textarea></label></p>
+    <p><label>Modified JSON (for proceed_modified)<br><textarea name="modified_json">{{ output_json }}</textarea></label></p>
+    <p>
+      <button name="action" value="proceed">Proceed</button>
+      <button name="action" value="proceed_modified">Proceed with modifications</button>
+      <button name="action" value="redo">Redo</button>
+      <button name="action" value="stop">Stop</button>
+    </p>
+  </form>
+</body>
+</html>

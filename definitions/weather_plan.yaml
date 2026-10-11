@@ -1,0 +1,98 @@
+apiVersion: wf/v1
+workflow:
+  id: weather-plan
+  version: 0.1.0
+  description: Weather-aware 7-day plan for a country, reviewed by a human.
+  inputs:
+    country: {type: string, required: true}
+    city:    {type: string, required: false, default: ""}
+    days:    {type: integer, default: 7, min: 1, max: 16}
+  defaults:
+    model: ${env.WF_EXECUTOR_MODEL}
+    evaluator_model: ${env.WF_EVALUATOR_MODEL}
+    max_iterations: 3
+    hitl: {channel: email, timeout: 72h, on_timeout: stop}
+  reviewers: ["${env.WF_REVIEWER_EMAIL}"]
+
+steps:
+  - id: get_forecast
+    type: agent
+    prerequisites:
+      - id: location
+        check: "has(ctx.location)"
+        resolve:
+          mode: agent
+          instructions: >
+            Resolve one location in ${inputs.country}. If city "${inputs.city}" is
+            non-empty, geocode it (pass country_code when the country input is
+            ISO alpha-2). Otherwise geocode the country and return the result
+            whose feature_code is PPLC. Return one matching geocoding result.
+          tools: [geocode_location]
+          output_schema: ResolvedLocation@1
+          verify:
+            - "inputs.city != '' || data.feature_code == 'PPLC'"
+            - "size(inputs.country) == 2 ? data.country_code == inputs.country : data.country.lowerAscii() == inputs.country.lowerAscii()"
+        bind: ctx.location
+    input:
+      location: "ctx.location"
+      days: "inputs.days"
+    executor:
+      instructions: >
+        Call get_daily_forecast for the given location and days, using the
+        location timezone when present. Copy every day exactly as the tool
+        returned it, including weather_description. Write a short summary.
+      tools: [get_daily_forecast]
+      output_schema: WeatherReport@1
+    evaluator:
+      checks:
+        - "size(data.days) == inputs.days"
+      named_checks: [forecast_matches_source]
+      rubric:
+        - "Summary is consistent with the daily values."
+    human_review:
+      required_when: "system.eval.verdict == 'escalated'"
+
+  - id: safety_advisory
+    type: agent
+    run_when: >
+      steps.get_forecast.data.days.exists(d,
+        d.weather_code in [65, 67, 75, 82, 86, 95, 96, 97, 99] || d.wind_speed_max_kmh >= 50.0)
+    input: {forecast: "steps.get_forecast.data"}
+    executor:
+      instructions: "Write a short safety advisory for the severe-weather days only."
+      tools: []
+      output_schema: SafetyAdvisory@1
+    evaluator:
+      named_checks: [advisory_covers_severe_days]
+      rubric: ["Advice is specific to the forecast hazards and not alarmist."]
+
+  - id: create_plan
+    type: agent
+    input:
+      forecast: "steps.get_forecast.data"
+      advisory: "steps.safety_advisory.system.status == 'completed' ? steps.safety_advisory.data : null"
+    executor:
+      instructions: >
+        Create a day-by-day plan for a visitor. For each forecast day, give morning,
+        afternoon and evening activities that suit that day's weather, plus an indoor
+        alternative and packing notes. Respect the advisory if present.
+      tools: []
+      output_schema: ActivityPlan@1
+    evaluator:
+      checks: ["size(data.days) == size(steps.get_forecast.data.days)"]
+      named_checks: [plan_dates_match_forecast, plan_respects_weather]
+      rubric:
+        - "Activities are plausible for the resolved city."
+        - "Poor-weather days lead with indoor options."
+    human_review:
+      required_when: "true"
+
+output:
+  from_step: create_plan
+  formats: [pdf]
+  template: templates/weather_plan.html
+  deliver:
+    to: initiator
+    subject: "Your ${steps.get_forecast.data.location.name} plan"
+    attach: true
+    link: presigned_s3

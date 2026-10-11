@@ -1,0 +1,6 @@
+<!DOCTYPE html>
+<html><body>
+<p>Please review workflow <strong>{{ workflow_id }}</strong> step <strong>{{ step_id }}</strong> (attempt {{ attempt }}).</p>
+<p>Evaluator verdict: {{ verdict.verdict if verdict else "n/a" }} (score {{ verdict.score if verdict else "" }}).</p>
+<p><a href="{{ link }}">Open the review page</a></p>
+</body></html>

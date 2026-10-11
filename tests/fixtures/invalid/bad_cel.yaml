@@ -1,0 +1,19 @@
+apiVersion: wf/v1
+workflow:
+  id: bad
+  version: 0.0.1
+  inputs:
+    country: {type: string, required: true}
+steps:
+  - id: one
+    type: agent
+    run_when: "this is not @@@ valid"
+    executor:
+      instructions: "do"
+      tools: []
+      output_schema: WeatherReport@1
+output:
+  from_step: one
+  formats: [pdf]
+  template: templates/weather_plan.html
+  deliver: {to: initiator, subject: "x", attach: true, link: presigned_s3}

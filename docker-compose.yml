@@ -1,0 +1,40 @@
+services:
+  temporal:
+    image: temporalio/temporal:1.4.1
+    command:
+      - server
+      - start-dev
+      - --ip
+      - 0.0.0.0
+      - --db-filename
+      - /home/temporal/temporal.db
+      - --ui-port
+      - "8233"
+    ports:
+      - "7233:7233"
+      - "8233:8233"
+    volumes:
+      - temporal-data:/home/temporal
+
+  worker:
+    profiles: ["full"]
+    build: .
+    command: python -m wf.engine.worker
+    env_file: .env
+    depends_on: [temporal]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  review-app:
+    profiles: ["full"]
+    build: .
+    command: python -m wf.hitl.app
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on: [temporal]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  temporal-data:

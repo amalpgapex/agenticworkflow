@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Weather-aware plan</title>
+  <style>
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #222; }
+    h1, h2 { color: #1a365d; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 16px; }
+    th, td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; }
+    th { background: #edf2f7; }
+    .meta { color: #555; font-size: 11px; }
+    footer { margin-top: 24px; font-size: 10px; color: #666; }
+  </style>
+</head>
+<body>
+  <h1>{{ plan.location_name or forecast.location.name }} — visitor plan</h1>
+  <p class="meta">Run ID: {{ run_id }}</p>
+  {% if approval %}
+  <p class="meta">
+    Approval: {{ approval.decision or "n/a" }}
+    by {{ approval.reviewer or "n/a" }}
+    {% if approval.decided_at %} at {{ approval.decided_at }}{% endif %}
+  </p>
+  {% endif %}
+
+  <h2>Location</h2>
+  {% set loc = forecast.location or {} %}
+  <p>{{ loc.name }}, {{ loc.country }} ({{ loc.country_code }}) · {{ loc.timezone }}</p>
+
+  <h2>Forecast</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th><th>Weather</th><th>Max °C</th><th>Min °C</th>
+        <th>Precip mm</th><th>Precip %</th><th>Wind km/h</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for day in forecast.days or [] %}
+      <tr>
+        <td>{{ day.date }}</td>
+        <td>{{ day.weather_description }} ({{ day.weather_code }})</td>
+        <td>{{ day.temp_max_c }}</td>
+        <td>{{ day.temp_min_c }}</td>
+        <td>{{ day.precipitation_mm }}</td>
+        <td>{{ day.precipitation_probability_max }}</td>
+        <td>{{ day.wind_speed_max_kmh }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if advisory %}
+  <h2>Safety advisory</h2>
+  <p>{{ advisory.general_advice }}</p>
+  <ul>
+    {% for day in advisory.severe_days or [] %}
+    <li>{{ day.date }}: {{ day.hazards | join(", ") }} — {{ day.advice }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <h2>Day-by-day plan</h2>
+  {% for day in plan.days or [] %}
+  <h3>{{ day.date }} · {{ day.outdoor_suitability }} · {{ day.weather_summary }}</h3>
+  <p><strong>Morning:</strong> {{ day.morning }}</p>
+  <p><strong>Afternoon:</strong> {{ day.afternoon }}</p>
+  <p><strong>Evening:</strong> {{ day.evening }}</p>
+  {% if day.indoor_alternative %}<p><strong>Indoor alternative:</strong> {{ day.indoor_alternative }}</p>{% endif %}
+  {% if day.packing %}<p><strong>Packing:</strong> {{ day.packing | join(", ") }}</p>{% endif %}
+  {% endfor %}
+
+  {% if plan.general_tips %}
+  <h2>Tips</h2>
+  <ul>{% for tip in plan.general_tips %}<li>{{ tip }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  <footer>Weather data by Open-Meteo.com (CC BY 4.0)</footer>
+</body>
+</html>
