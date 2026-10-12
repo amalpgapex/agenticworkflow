@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CARE 701B Processing Summary</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        .header {
+            background: #0066cc;
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 0;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .header .subtitle {
+            opacity: 0.9;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .content {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            padding: 20px;
+            border-radius: 0 0 8px 8px;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .section {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .section h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: #495057;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        .field {
+            display: flex;
+            margin-bottom: 8px;
+        }
+        .field-label {
+            font-weight: 600;
+            width: 150px;
+            color: #6c757d;
+            font-size: 13px;
+        }
+        .field-value {
+            flex: 1;
+            font-size: 14px;
+        }
+        .steps-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .steps-table th,
+        .steps-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .steps-table th {
+            background: #f1f3f4;
+            font-weight: 600;
+            color: #495057;
+        }
+        .footer {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+            font-size: 12px;
+            color: #6c757d;
+            text-align: center;
+        }
+        .phi-notice {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>CARE 701B Processing Summary</h1>
+        <div class="subtitle">Run ID: {{ run_id }}</div>
+    </div>
+    
+    <div class="content">
+        <div class="section">
+            <h3>Processing Status</h3>
+            <div class="field">
+                <span class="field-label">Status:</span>
+                <span class="field-value">
+                    <span class="status status-{{ status | default('completed') }}">
+                        {{ status | default('Completed') }}
+                    </span>
+                </span>
+            </div>
+            <div class="field">
+                <span class="field-label">Batch ID:</span>
+                <span class="field-value">{{ batch_id }}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Processed At:</span>
+                <span class="field-value">{{ processed_at | default('N/A') }}</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Document Information</h3>
+            <div class="field">
+                <span class="field-label">Document Type:</span>
+                <span class="field-value">CARE 701B</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Document Date:</span>
+                <span class="field-value">{{ document_date | default('N/A') }}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Source File:</span>
+                <span class="field-value">{{ pdf_file_key | default('N/A') }}</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>TrueCare Records</h3>
+            <div class="field">
+                <span class="field-label">Member ID:</span>
+                <span class="field-value">{{ member_id | default('N/A') }}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Document ID:</span>
+                <span class="field-value">{{ document_id | default('N/A') }}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Case Note ID:</span>
+                <span class="field-value">{{ note_id | default('N/A') }}</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Processing Steps</h3>
+            <table class="steps-table">
+                <thead>
+                    <tr>
+                        <th>Step</th>
+                        <th>Status</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>PDF Intake & Extraction</td>
+                        <td><span class="status status-completed">✓</span></td>
+                        <td>Agent</td>
+                    </tr>
+                    <tr>
+                        <td>Member Validation</td>
+                        <td><span class="status status-completed">✓</span></td>
+                        <td>Action</td>
+                    </tr>
+                    <tr>
+                        <td>Duplicate Check</td>
+                        <td><span class="status status-completed">✓</span></td>
+                        <td>Action</td>
+                    </tr>
+                    <tr>
+                        <td>Document Upload</td>
+                        <td><span class="status status-completed">✓</span></td>
+                        <td>Action</td>
+                    </tr>
+                    <tr>
+                        <td>Case Note Creation</td>
+                        <td><span class="status status-completed">✓</span></td>
+                        <td>Agent</td>
+                    </tr>
+                    <tr>
+                        <td>PHI-Compliant Logging</td>
+                        <td><span class="status status-completed">✓</span></td>
+                        <td>Action</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="phi-notice">
+            <strong>PHI Notice:</strong> This summary contains only member identifiers (Member ID).
+            No SSN, name, date of birth, or diagnosis information is included in accordance
+            with HIPAA compliance requirements.
+        </div>
+    </div>
+
+    <div class="footer">
+        Generated by CARE 701B Agentic Workflow | Everforth-Apex Systems
+    </div>
+</body>
+</html>

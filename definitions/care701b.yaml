@@ -1,0 +1,180 @@
+apiVersion: wf/v1
+workflow:
+  id: care-701b-intake
+  version: 0.1.0
+  description: >
+    CARE 701B document intake workflow. Processes incoming PDF forms,
+    validates members, checks for duplicates, uploads to TrueCare,
+    creates case notes, and logs results (PHI-compliant).
+  inputs:
+    pdf_file_key:
+      type: string
+      required: true
+    batch_id:
+      type: string
+      required: true
+    bucket:
+      type: string
+      required: false
+      default: "care701b-intake"
+  defaults:
+    model: ${env.WF_EXECUTOR_MODEL}
+    evaluator_model: ${env.WF_EVALUATOR_MODEL}
+    max_iterations: 3
+    hitl:
+      channel: email
+      timeout: 24h
+      on_timeout: fail
+    on_exhausted: fail
+  reviewers: ["${env.WF_EXCEPTION_EMAIL}"]
+
+steps:
+  # -------------------------------------------------------------------------
+  # Step 1: PDF Intake & Extraction (Agent - handles low-confidence fallback)
+  # -------------------------------------------------------------------------
+  - id: pdf_intake
+    type: agent
+    input:
+      file_key: "inputs.pdf_file_key"
+      bucket: "inputs.bucket"
+    executor:
+      instructions: >
+        Extract fields from the CARE 701B PDF form.
+        
+        Use the textract_extract_form_tool to extract:
+        - member_ssn: Member's Social Security Number
+        - member_name: Member's full name
+        - member_dob: Member's date of birth
+        - document_date: Date on the document
+        - initial_checkbox_checked: Whether the 'Initial' checkbox is marked
+        
+        Return all extracted fields along with confidence scores.
+        Set low_confidence to true if any field has confidence < 0.85.
+      tools: [textract_extract_form_tool]
+      output_schema: Care701bExtraction@1
+    evaluator:
+      checks:
+        - "data.initial_checkbox_checked == true"
+        - "has(data.member_ssn) && size(data.member_ssn) > 0"
+        - "has(data.member_name) && size(data.member_name) > 0"
+      named_checks: []
+      rubric:
+        - "All required fields are extracted with values"
+        - "SSN format appears valid (XXX-XX-XXXX pattern)"
+        - "Initial checkbox must be checked for valid CARE 701B form"
+    human_review:
+      required_when: "data.low_confidence == true || data.confidence_scores.min < 0.85"
+
+  # -------------------------------------------------------------------------
+  # Step 2: Member Validation (Action - deterministic API call)
+  # -------------------------------------------------------------------------
+  - id: member_validation
+    type: action
+    input:
+      ssn: "steps.pdf_intake.data.member_ssn"
+      name: "steps.pdf_intake.data.member_name"
+      dob: "steps.pdf_intake.data.member_dob"
+    action:
+      tool: truecare_member_lookup
+      output_schema: MemberValidationResult@1
+      on_error: fail
+
+  # -------------------------------------------------------------------------
+  # Step 3: Duplicate Check (Action - deterministic API call)
+  # -------------------------------------------------------------------------
+  - id: duplicate_check
+    type: action
+    run_when: "steps.member_validation.data.member_found == true"
+    input:
+      member_id: "steps.member_validation.data.data.member_id"
+      document_date: "steps.pdf_intake.data.document_date"
+      lookback_months: "12"
+    action:
+      tool: truecare_document_search
+      output_schema: DuplicateCheckResult@1
+      on_error: fail
+
+  # -------------------------------------------------------------------------
+  # Step 4: Document Upload (Action - deterministic API call)
+  # -------------------------------------------------------------------------
+  - id: document_upload
+    type: action
+    run_when: "steps.duplicate_check.data.data.is_duplicate == false"
+    input:
+      member_id: "steps.member_validation.data.data.member_id"
+      file_key: "inputs.pdf_file_key"
+      document_date: "steps.pdf_intake.data.document_date"
+      document_type: "'CARE-701B'"
+    action:
+      tool: truecare_document_upload
+      output_schema: DocumentUploadResult@1
+      on_error: fail
+
+  # -------------------------------------------------------------------------
+  # Step 5: Case Note Creation (Agent - requires AI for template mapping)
+  # -------------------------------------------------------------------------
+  - id: case_note
+    type: agent
+    run_when: "steps.document_upload.data.success == true"
+    input:
+      member_id: "steps.member_validation.data.data.member_id"
+      document_id: "steps.document_upload.data.data.document_id"
+      member_name: "steps.pdf_intake.data.member_name"
+      document_date: "steps.pdf_intake.data.document_date"
+      form_type: "steps.pdf_intake.data.form_type"
+    executor:
+      instructions: >
+        Create a standardized case note for the CARE 701B document.
+        
+        Use the truecare_create_case_note_tool with:
+        - member_id: The TrueCare member ID
+        - document_id: The uploaded document ID
+        - note_template: "CARE-701B-STANDARD"
+        - fields: Include member_name, document_date, and form_type
+        
+        The case note should follow Centene's standard format:
+        - Header: CARE 701B Document Received
+        - Body: Member ID, Document ID, Date Processed
+        - Footer: Auto-generated case note marker
+        
+        Ensure the note content is PHI-compliant (no SSN in note text).
+      tools: [truecare_create_case_note_tool]
+      output_schema: CaseNoteResult@1
+    evaluator:
+      checks:
+        - "data.note_created == true"
+        - "has(data.note_id)"
+      named_checks: []
+      rubric:
+        - "Case note follows standard CARE 701B template"
+        - "No PHI (SSN, diagnosis) appears in note free-text"
+        - "All required fields are populated"
+
+  # -------------------------------------------------------------------------
+  # Step 6: PHI-Compliant Logging (Action - deterministic)
+  # -------------------------------------------------------------------------
+  - id: log_output
+    type: action
+    input:
+      batch_id: "inputs.batch_id"
+      entry:
+        batch_id: "inputs.batch_id"
+        member_id: "steps.member_validation.data.data.member_id"
+        document_id: "steps.document_upload.data.data.document_id"
+        note_id: "steps.case_note.data.note_id"
+        status: "'completed'"
+        processing_duration_ms: "0"
+    action:
+      tool: s3_append_log
+      output_schema: LogResult@1
+      on_error: continue  # Don't fail workflow if logging fails
+
+output:
+  from_step: log_output
+  formats: [pdf]
+  template: templates/care701b_summary.html
+  deliver:
+    to: initiator
+    subject: "CARE 701B Batch ${inputs.batch_id} - Record Processed"
+    attach: false
+    link: presigned_s3
