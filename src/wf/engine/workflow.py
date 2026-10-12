@@ -148,6 +148,10 @@ class InterpreterWorkflow:
             if not should_run:
                 return await self._persist_skip(definition, step, payload)
 
+        # Handle action steps (deterministic, no LLM)
+        if step.type == "action":
+            return await self._run_action_step(definition, step, payload, ctx, steps)
+
         attempt = 1
         human_feedback: str | None = None
         while True:
@@ -230,6 +234,105 @@ class InterpreterWorkflow:
                 models=models,
                 human=human,
             )
+
+    async def _run_action_step(
+        self,
+        definition: Definition,
+        step: Step,
+        payload: WorkflowInput,
+        ctx: dict[str, Any],
+        steps: dict[str, Any],
+    ) -> dict[str, Any]:
+        """
+        Run a deterministic action step (direct tool call, no LLM).
+        
+        Action steps bypass the executor/evaluator loop and call tools directly.
+        They're faster, cheaper, and 100% deterministic.
+        """
+        assert step.action is not None, "action step requires action config"
+        
+        # Map step inputs
+        step_input = await workflow.execute_activity(
+            activities.map_step_input,
+            args=[step.input, {"inputs": payload.inputs, "ctx": ctx, "steps": steps}],
+            start_to_close_timeout=SHORT_TIMEOUT,
+            retry_policy=SHORT_RETRY,
+        )
+        
+        # Execute the action (direct tool call)
+        result = await workflow.execute_activity(
+            activities.run_action_activity,
+            args=[
+                {
+                    "run_id": payload.run_id,
+                    "step_id": step.id,
+                    "attempt": 1,
+                    "tool_name": step.action.tool,
+                    "tool_input": step_input,
+                    "output_schema": step.action.output_schema,
+                    "on_error": step.action.on_error,
+                }
+            ],
+            start_to_close_timeout=AGENT_TIMEOUT,
+            retry_policy=AGENT_RETRY,
+        )
+        
+        data = result["data"]
+        trace = result.get("trace", [])
+        usage = result.get("usage", {"input_tokens": 0, "output_tokens": 0})
+        
+        # Determine status based on success
+        status = "completed" if data.get("success", False) else "failed"
+        if status == "failed" and step.action.on_error == "continue":
+            status = "completed"  # Mark as completed even on error if configured
+        
+        # Build envelope for action step
+        envelope = {
+            "system": {
+                "run_id": payload.run_id,
+                "workflow_id": definition.workflow.id,
+                "definition_version": definition.workflow.version,
+                "step_id": step.id,
+                "step_type": "action",
+                "schema": step.action.output_schema,
+                "status": status,
+                "attempt": 1,
+                "eval": {
+                    "verdict": "pass" if data.get("success") else "fail",
+                    "score": 1.0 if data.get("success") else 0.0,
+                    "iterations": 0,  # No iterations for actions
+                    "unmet_criteria": [],
+                    "checks": [],
+                },
+                "human": {
+                    "required": False,
+                    "decision": None,
+                    "reviewer": "",
+                    "decided_at": None,
+                    "feedback": "",
+                    "modified": False,
+                    "check_warnings": [],
+                    "diff": None,
+                },
+                "model": {"executor": "action", "evaluator": "none"},
+                "usage": usage,
+                "artifact_uri": "",
+                "started_at": workflow.now().isoformat(),
+                "completed_at": workflow.now().isoformat(),
+            },
+            "data": data.get("data", data),  # Use nested data if present, else full data
+        }
+        
+        # Persist the envelope
+        uri = await workflow.execute_activity(
+            activities.persist_envelope_activity,
+            args=[{"envelope": envelope}],
+            start_to_close_timeout=SHORT_TIMEOUT,
+            retry_policy=SHORT_RETRY,
+        )
+        envelope["system"]["artifact_uri"] = uri
+        
+        return envelope
 
     async def _resolve_prereqs(
         self,

@@ -30,6 +30,7 @@ async def run_worker() -> None:
             activities.map_step_input,
             activities.run_resolver_activity,
             activities.run_executor_activity,
+            activities.run_action_activity,  # For type: action steps
             activities.run_checks_activity,
             activities.run_evaluator_activity,
             activities.persist_envelope_activity,

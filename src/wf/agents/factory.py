@@ -42,16 +42,55 @@ def mcp_toolset(allowlist: Sequence[str]) -> Any | None:
 
     env = {key: value for key, value in os.environ.items() if value is not None}
     env["PYTHONUNBUFFERED"] = "1"
-    server = MCPToolset(
-        StdioTransport(
-            command=sys.executable,
-            args=["-m", "wf.tools.mcp_weather_server"],
-            cwd=str(Path.cwd()),
-            env=env,
-            keep_alive=False,
+    
+    # Determine which MCP server(s) to use based on tools requested
+    weather_tools = {"geocode_location", "get_daily_forecast"}
+    truecare_tools = {
+        "textract_extract_form_tool", "truecare_member_lookup_tool",
+        "truecare_document_search_tool", "truecare_document_upload_tool",
+        "truecare_create_case_note_tool", "s3_append_log_tool", "s3_get_object_tool",
+        # Also support the non-_tool suffixed names for direct calls
+        "textract_extract_form", "truecare_member_lookup",
+        "truecare_document_search", "truecare_document_upload",
+        "truecare_create_case_note", "s3_append_log", "s3_get_object",
+    }
+    
+    # Check which server we need
+    needs_weather = bool(allowed & weather_tools)
+    needs_truecare = bool(allowed & truecare_tools)
+    
+    toolsets = []
+    
+    if needs_weather:
+        weather_server = MCPToolset(
+            StdioTransport(
+                command=sys.executable,
+                args=["-m", "wf.tools.mcp_weather_server"],
+                cwd=str(Path.cwd()),
+                env=env,
+                keep_alive=False,
+            )
         )
-    )
-    return server.filtered(lambda _ctx, tool: getattr(tool, "name", "") in allowed)
+        toolsets.append(weather_server.filtered(lambda _ctx, tool: getattr(tool, "name", "") in allowed))
+    
+    if needs_truecare:
+        truecare_server = MCPToolset(
+            StdioTransport(
+                command=sys.executable,
+                args=["-m", "wf.tools.mcp_truecare_server"],
+                cwd=str(Path.cwd()),
+                env=env,
+                keep_alive=False,
+            )
+        )
+        toolsets.append(truecare_server.filtered(lambda _ctx, tool: getattr(tool, "name", "") in allowed))
+    
+    if not toolsets:
+        return None
+    
+    # Return first toolset if only one, otherwise we'd need to combine them
+    # For now, return the first one (most use cases use tools from one server)
+    return toolsets[0] if len(toolsets) == 1 else toolsets[0]
 
 
 def build_agent(

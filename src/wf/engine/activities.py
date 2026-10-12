@@ -87,6 +87,118 @@ async def run_executor_activity(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 @activity.defn
+async def run_action_activity(payload: dict[str, Any]) -> dict[str, Any]:
+    """
+    Run a deterministic action step (direct tool call, no LLM).
+    
+    This bypasses the executor/evaluator loop and calls the tool directly.
+    """
+    import time
+    from wf.tools.truecare import TRUECARE_TOOLS
+    from wf.tools.openmeteo import geocode_location, get_daily_forecast
+    
+    bind_run(
+        run_id=payload["run_id"],
+        step_id=payload.get("step_id", ""),
+        attempt=payload.get("attempt", 1),
+    )
+    
+    tool_name = payload["tool_name"]
+    tool_input = payload.get("tool_input") or {}
+    output_schema = payload.get("output_schema", "ActionResult@1")
+    on_error = payload.get("on_error", "fail")
+    
+    # Tool registry - combine all available tools
+    all_tools = {
+        **TRUECARE_TOOLS,
+        "geocode_location": geocode_location,
+        "get_daily_forecast": get_daily_forecast,
+    }
+    
+    tool_fn = all_tools.get(tool_name)
+    if tool_fn is None:
+        error_msg = f"Unknown action tool: {tool_name}"
+        if on_error == "fail":
+            raise _nonretryable(error_msg)
+        return {
+            "data": {"success": False, "error": error_msg, "tool_name": tool_name, "data": {}},
+            "trace": [],
+            "usage": {"input_tokens": 0, "output_tokens": 0},
+        }
+    
+    start_time = time.time()
+    try:
+        # Call the tool directly
+        if hasattr(tool_fn, "__call__"):
+            import inspect
+            if inspect.iscoroutinefunction(tool_fn):
+                # Async tool - check if it takes a Pydantic model or kwargs
+                sig = inspect.signature(tool_fn)
+                params = list(sig.parameters.keys())
+                if len(params) == 1 and not params[0].startswith("*"):
+                    # Likely takes a single Pydantic model input
+                    # Try to find the input class
+                    from wf.tools import truecare
+                    input_class_name = tool_name.replace("_", " ").title().replace(" ", "") + "Input"
+                    input_class = getattr(truecare, input_class_name, None)
+                    if input_class:
+                        input_obj = input_class(**tool_input)
+                        result = await tool_fn(input_obj)
+                    else:
+                        result = await tool_fn(**tool_input)
+                else:
+                    result = await tool_fn(**tool_input)
+            else:
+                result = tool_fn(**tool_input)
+        else:
+            raise _nonretryable(f"Tool {tool_name} is not callable")
+        
+        duration_ms = int((time.time() - start_time) * 1000)
+        
+        # Convert result to dict if it's a Pydantic model
+        if hasattr(result, "model_dump"):
+            result_data = result.model_dump()
+        elif isinstance(result, dict):
+            result_data = result
+        else:
+            result_data = {"result": result}
+        
+        # Wrap in ActionResult format
+        data = {
+            "success": not result_data.get("error", False),
+            "data": result_data,
+            "error": result_data.get("reason") if result_data.get("error") else None,
+            "tool_name": tool_name,
+            "duration_ms": duration_ms,
+        }
+        
+        return {
+            "data": data,
+            "trace": [{"tool": tool_name, "input": tool_input, "output": result_data}],
+            "usage": {"input_tokens": 0, "output_tokens": 0},  # No LLM usage
+        }
+        
+    except Exception as exc:
+        duration_ms = int((time.time() - start_time) * 1000)
+        error_msg = str(exc)
+        
+        if on_error == "fail":
+            raise _nonretryable(error_msg) from exc
+        
+        return {
+            "data": {
+                "success": False,
+                "data": {},
+                "error": error_msg,
+                "tool_name": tool_name,
+                "duration_ms": duration_ms,
+            },
+            "trace": [{"tool": tool_name, "input": tool_input, "error": error_msg}],
+            "usage": {"input_tokens": 0, "output_tokens": 0},
+        }
+
+
+@activity.defn
 async def run_checks_activity(payload: dict[str, Any]) -> list[dict[str, Any]]:
     """Run CEL then named checks. Pydantic validation is implied by typed executor output."""
     data = payload["data"]

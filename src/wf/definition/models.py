@@ -88,6 +88,16 @@ class ExecutorConfig(ForbidModel):
     output_schema: str
 
 
+class ActionConfig(ForbidModel):
+    """Action step configuration (deterministic, no LLM)."""
+
+    tool: str = Field(description="Single tool to call directly")
+    output_schema: str = Field(default="ActionResult@1", description="Schema for result")
+    on_error: Literal["fail", "continue"] = Field(
+        default="fail", description="Behavior on tool error"
+    )
+
+
 class EvaluatorConfig(ForbidModel):
     """Evaluator configuration."""
 
@@ -103,7 +113,7 @@ class HumanReview(ForbidModel):
 
 
 class Step(ForbidModel):
-    """One sequential agent step."""
+    """One sequential agent or action step."""
 
     id: str
     type: Literal["agent", "parallel", "action"]
@@ -113,11 +123,17 @@ class Step(ForbidModel):
     executor: ExecutorConfig | None = None
     evaluator: EvaluatorConfig | None = None
     human_review: HumanReview | None = None
+    action: ActionConfig | None = None  # For type: action steps
 
     @model_validator(mode="after")
-    def agent_requires_executor(self) -> Step:
+    def validate_step_config(self) -> Step:
+        """Validate that step has correct config for its type."""
         if self.type == "agent" and self.executor is None:
             raise ValueError("agent steps require an executor")
+        if self.type == "action" and self.action is None:
+            raise ValueError("action steps require an action config")
+        if self.type == "action" and self.executor is not None:
+            raise ValueError("action steps should not have an executor config")
         return self
 
 
